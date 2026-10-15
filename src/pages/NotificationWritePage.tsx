@@ -7,17 +7,13 @@ import { Button } from '../components/Button';
 import { EditorLayout } from '../components/layout/EditorLayout';
 import { LeaveConfirmModal, NotificationForm, useNotificationForm } from '../domains/notifications';
 import { toKstIsoString } from '../utils/date';
+import { parseId } from '../utils/parseId';
 
 const PAGE_TITLE = '알람발송';
 
-function parseContentId(value: string | null) {
-  const contentId = Number(value);
-  return value != null && Number.isInteger(contentId) && contentId > 0 ? contentId : null;
-}
-
 export function NotificationWritePage() {
   const [searchParams] = useSearchParams();
-  const contentId = parseContentId(searchParams.get('contentId'));
+  const contentId = parseId(searchParams.get('contentId'));
 
   if (contentId == null) {
     return <InvalidContentNotice />;

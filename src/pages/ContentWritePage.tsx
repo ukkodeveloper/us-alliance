@@ -16,9 +16,11 @@ import {
   PublishModal,
   toContentFormValues,
   toContentRequest,
+  toUpdateContentRequest,
   useContentForm,
   useDraftAutosave,
 } from '../domains/contents';
+import { parseId } from '../utils/parseId';
 
 const PAGE_TITLE = '콘텐츠 쓰기';
 const LIST_PATH = '/';
@@ -29,7 +31,11 @@ export function ContentWritePage() {
   if (id == null) {
     return <NewContentWriter />;
   }
-  return <EditContentWriter contentId={Number(id)} />;
+  const contentId = parseId(id);
+  if (contentId == null) {
+    return <ContentNotice message="콘텐츠를 찾을 수 없습니다." />;
+  }
+  return <EditContentWriter contentId={contentId} />;
 }
 
 function NewContentWriter() {
@@ -95,18 +101,7 @@ function NewContentWriter() {
 
 function EditContentWriter({ contentId }: { contentId: number }) {
   return (
-    <ErrorBoundary
-      fallback={({ error }) => (
-        <ContentWriterLayout actions={null}>
-          <div role="alert" className="flex flex-col items-center gap-3 py-20 text-sm text-gray-500">
-            <p>{error.message}</p>
-            <Link to={LIST_PATH} className="font-semibold text-primary">
-              목록으로 돌아가기
-            </Link>
-          </div>
-        </ContentWriterLayout>
-      )}
-    >
+    <ErrorBoundary fallback={({ error }) => <ContentNotice message={error.message} />}>
       <Suspense
         fallback={
           <ContentWriterLayout actions={null}>
@@ -161,16 +156,28 @@ function useSaveContent(contentId: number | null) {
 
   return useMutation({
     mutationFn: (values: ContentFormValues) => {
-      const request = toContentRequest(values);
       if (contentId == null) {
-        return createContent(request);
+        return createContent(toContentRequest(values));
       }
-      return updateContent(contentId, { ...request, link_url: values.linkUrl ?? '' });
+      return updateContent(contentId, toUpdateContentRequest(values));
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['contents'] });
     },
   });
+}
+
+function ContentNotice({ message }: { message: string }) {
+  return (
+    <ContentWriterLayout actions={null}>
+      <div role="alert" className="flex flex-col items-center gap-3 py-20 text-sm text-gray-500">
+        <p>{message}</p>
+        <Link to={LIST_PATH} className="font-semibold text-primary">
+          목록으로 돌아가기
+        </Link>
+      </div>
+    </ContentWriterLayout>
+  );
 }
 
 type ContentWriterLayoutProps = {

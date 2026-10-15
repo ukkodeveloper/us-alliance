@@ -6,6 +6,7 @@ import {
   isEmptyContentForm,
   toContentFormValues,
   toContentRequest,
+  toUpdateContentRequest,
 } from './contentFormValues';
 
 const CONTENT: Content = {
@@ -45,6 +46,10 @@ describe('contentFormValues', () => {
 
   it('링크를 삽입하고 저장하면 요청에 link_url을 담는다', () => {
     expect(toContentRequest(toContentFormValues(CONTENT)).link_url).toBe('https://example.com');
+  });
+
+  it('수정할 때 링크를 지우면 link_url을 빈 문자열로 보내 서버의 링크를 지운다', () => {
+    expect(toUpdateContentRequest({ ...toContentFormValues(CONTENT), linkUrl: null }).link_url).toBe('');
   });
 
   it('공백만 입력한 폼은 빈 폼으로 본다', () => {

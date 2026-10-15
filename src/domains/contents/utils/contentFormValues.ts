@@ -1,4 +1,9 @@
-import { type Category, type Content, type CreateContentRequest } from '../../../api/contents';
+import {
+  type Category,
+  type Content,
+  type CreateContentRequest,
+  type UpdateContentRequest,
+} from '../../../api/contents';
 
 export type ContentFormValues = {
   categories: Category[];
@@ -29,6 +34,10 @@ export function toContentRequest({ categories, title, body, linkUrl }: ContentFo
     return request;
   }
   return { ...request, link_url: linkUrl };
+}
+
+export function toUpdateContentRequest(values: ContentFormValues): UpdateContentRequest {
+  return { ...toContentRequest(values), link_url: values.linkUrl ?? '' };
 }
 
 export function isEmptyContentForm({ categories, title, body, linkUrl }: ContentFormValues) {

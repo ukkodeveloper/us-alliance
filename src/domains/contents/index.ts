@@ -9,5 +9,6 @@ export {
   EMPTY_CONTENT_FORM_VALUES,
   toContentFormValues,
   toContentRequest,
+  toUpdateContentRequest,
 } from './utils/contentFormValues';
 export { clearDraft, loadDraft } from './utils/draftStorage';
