@@ -38,11 +38,11 @@ function NewContentWriter() {
     searchParams.get('draft') === '1' ? (loadDraft()?.values ?? EMPTY_CONTENT_FORM_VALUES) : EMPTY_CONTENT_FORM_VALUES
   );
   const form = useContentForm(initialValues);
-  const { lastSavedAt, saveNow } = useDraftAutosave(form.values, { enabled: true });
+  const [publishTarget, setPublishTarget] = useState<Content | null>(null);
+  const { lastSavedAt, saveNow } = useDraftAutosave(form.values, { enabled: publishTarget == null });
   const [draftNotice, setDraftNotice] = useState<string | null>(null);
   const save = useSaveContent(null);
   const navigate = useNavigate();
-  const [publishTarget, setPublishTarget] = useState<Content | null>(null);
 
   function handleSaveDraft() {
     setDraftNotice(saveNow() ? null : '임시저장할 내용이 없습니다.');
@@ -72,7 +72,7 @@ function NewContentWriter() {
           <Button variant="secondary" onClick={handleSaveDraft}>
             임시저장
           </Button>
-          <Button onClick={handlePublish} disabled={save.isPending}>
+          <Button onClick={handlePublish} disabled={save.isPending || publishTarget != null}>
             발행하기
           </Button>
         </>
@@ -136,7 +136,7 @@ function EditContentForm({ contentId }: { contentId: number }) {
   return (
     <ContentWriterLayout
       actions={
-        <Button onClick={handlePublish} disabled={save.isPending}>
+        <Button onClick={handlePublish} disabled={save.isPending || publishTarget != null}>
           발행하기
         </Button>
       }
