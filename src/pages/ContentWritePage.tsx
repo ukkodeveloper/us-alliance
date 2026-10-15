@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { type ReactNode, Suspense, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 
-import { contentQueries, createContent, updateContent } from '../api/contents';
+import { type Content, contentQueries, createContent, updateContent } from '../api/contents';
 import { Button } from '../components/Button';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { EditorLayout } from '../components/layout/EditorLayout';
@@ -13,6 +13,7 @@ import {
   type ContentFormValues,
   EMPTY_CONTENT_FORM_VALUES,
   loadDraft,
+  PublishModal,
   toContentFormValues,
   toContentRequest,
   useContentForm,
@@ -40,6 +41,8 @@ function NewContentWriter() {
   const { lastSavedAt, saveNow } = useDraftAutosave(form.values, { enabled: true });
   const [draftNotice, setDraftNotice] = useState<string | null>(null);
   const save = useSaveContent(null);
+  const navigate = useNavigate();
+  const [publishTarget, setPublishTarget] = useState<Content | null>(null);
 
   function handleSaveDraft() {
     setDraftNotice(saveNow() ? null : '임시저장할 내용이 없습니다.');
@@ -50,8 +53,9 @@ function NewContentWriter() {
       return;
     }
     save.mutate(form.values, {
-      onSuccess: () => {
+      onSuccess: content => {
         clearDraft();
+        setPublishTarget(content);
       },
     });
   }
@@ -76,6 +80,15 @@ function NewContentWriter() {
       error={save.error?.message}
     >
       <ContentForm values={form.values} errors={form.errors} onChange={form.setValues} />
+      {publishTarget != null && (
+        <PublishModal
+          open
+          contentId={publishTarget.id}
+          contentTitle={publishTarget.title}
+          onClose={() => navigate(`/contents/${publishTarget.id}/edit`, { replace: true })}
+          onPublished={() => navigate(LIST_PATH)}
+        />
+      )}
     </ContentWriterLayout>
   );
 }
@@ -111,10 +124,12 @@ function EditContentForm({ contentId }: { contentId: number }) {
   const { data: content } = useSuspenseQuery(contentQueries.detail(contentId));
   const form = useContentForm(toContentFormValues(content));
   const save = useSaveContent(contentId);
+  const navigate = useNavigate();
+  const [publishTarget, setPublishTarget] = useState<Content | null>(null);
 
   function handlePublish() {
     if (form.validate()) {
-      save.mutate(form.values);
+      save.mutate(form.values, { onSuccess: setPublishTarget });
     }
   }
 
@@ -128,13 +143,21 @@ function EditContentForm({ contentId }: { contentId: number }) {
       error={save.error?.message}
     >
       <ContentForm values={form.values} errors={form.errors} onChange={form.setValues} />
+      {publishTarget != null && (
+        <PublishModal
+          open
+          contentId={publishTarget.id}
+          contentTitle={publishTarget.title}
+          onClose={() => setPublishTarget(null)}
+          onPublished={() => navigate(LIST_PATH)}
+        />
+      )}
     </ContentWriterLayout>
   );
 }
 
 function useSaveContent(contentId: number | null) {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
 
   return useMutation({
     mutationFn: (values: ContentFormValues) => {
@@ -146,7 +169,6 @@ function useSaveContent(contentId: number | null) {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['contents'] });
-      navigate(LIST_PATH);
     },
   });
 }
