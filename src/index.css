@@ -1,1 +1,9 @@
 @import 'tailwindcss';
+@import 'react-datepicker/dist/react-datepicker.css';
+
+@theme {
+  --color-primary: #1ba58a;
+  --color-primary-dark: #14876f;
+  --color-primary-light: #e8f6f2;
+  --color-danger: #f04452;
+}
