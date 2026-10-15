@@ -1,0 +1,435 @@
+<title>FE 과제 파이프라인</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* layout: 단일 읽기 칼럼(≈760px) + 넓은 표·타임라인만 칼럼 밖으로 확장 */
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --ink: #18202e;
+  --muted: #5b6577;
+  --line: #dde1e8;
+  --accent: #2f5bd3;
+  --accent-soft: #e6ecfb;
+  --gate: #b86e00;
+  --gate-soft: #fbf0dc;
+  --human: #1f7a55;
+  --human-soft: #e2f3ea;
+  --code-bg: #eef0f4;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151c; --surface: #171c25; --ink: #e6e9ef; --muted: #9aa3b2; --line: #2a313d;
+    --accent: #8aa8f5; --accent-soft: #1f2a44; --gate: #f0b45a; --gate-soft: #3a2c14;
+    --human: #6fcf9f; --human-soft: #15302a; --code-bg: #1f2530; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151c; --surface: #171c25; --ink: #e6e9ef; --muted: #9aa3b2; --line: #2a313d;
+  --accent: #8aa8f5; --accent-soft: #1f2a44; --gate: #f0b45a; --gate-soft: #3a2c14;
+  --human: #6fcf9f; --human-soft: #15302a; --code-bg: #1f2530; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15.5px; line-height: 1.7; padding-inline: 16px; padding-block: 40px 80px; }
+.page { max-width: 820px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+header { display: flex; flex-direction: column; gap: 14px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-size: clamp(28px, 5vw, 40px); line-height: 1.25; margin: 0; font-weight: 700; text-wrap: balance; letter-spacing: -.01em; }
+h2 { font-size: 22px; margin: 0; font-weight: 700; text-wrap: balance; }
+h3 { font-size: 17px; margin: 0; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+.lead { font-size: 17px; color: var(--muted); }
+section { display: flex; flex-direction: column; gap: 18px; }
+.section-head { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--line); padding-top: 24px; }
+.section-head .num { font-family: var(--font-mono); font-size: 12px; color: var(--accent); letter-spacing: .06em; }
+code, .mono { font-family: var(--font-mono); font-size: .88em; }
+code { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; }
+pre { background: var(--code-bg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; margin: 0; font-size: 13px; line-height: 1.6; }
+pre code { background: none; padding: 0; }
+.axes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.axis { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+.axis b { font-size: 16px; }
+.axis span { color: var(--muted); font-size: 14px; line-height: 1.6; }
+@media (max-width: 640px) { .axes { grid-template-columns: 1fr; } }
+
+.timeline { display: flex; flex-direction: column; gap: 10px; }
+.bar { display: flex; width: 100%; height: 44px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
+.seg { display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 11px; color: var(--ink); background: var(--surface); border-right: 1px solid var(--line); min-width: 0; white-space: nowrap; overflow: hidden; }
+.seg:last-child { border-right: 0; }
+.seg.impl { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+.seg.gate { box-shadow: inset 0 -3px 0 var(--gate); }
+.seg.buffer { background: repeating-linear-gradient(45deg, var(--surface), var(--surface) 4px, var(--bg) 4px, var(--bg) 8px); color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: var(--muted); }
+.legend i { display: inline-block; width: 14px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: 12.5px; letter-spacing: .02em; background: var(--bg); }
+tr:last-child td { border-bottom: 0; }
+td.nowrap { white-space: nowrap; }
+.pill { display: inline-block; font-family: var(--font-mono); font-size: 11px; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+.pill.gate { background: var(--gate-soft); color: var(--gate); }
+.pill.ai { background: var(--accent-soft); color: var(--accent); }
+.pill.me { background: var(--human-soft); color: var(--human); }
+
+.steps { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); overflow: hidden; }
+.step { display: grid; grid-template-columns: 56px minmax(0, 1fr); border-bottom: 1px solid var(--line); }
+.step:last-child { border-bottom: 0; }
+.step .idx { font-family: var(--font-mono); font-size: 13px; color: var(--muted); padding: 18px 0 0 18px; }
+.step .body { padding: 16px 18px 18px 0; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.step .title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 12px; }
+.step .cmd { font-family: var(--font-mono); font-size: 12.5px; color: var(--accent); }
+.step .time { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.who { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.who div { font-size: 14px; line-height: 1.6; padding: 10px 12px; border-radius: 8px; }
+.who .ai { background: var(--accent-soft); }
+.who .me { background: var(--human-soft); }
+.who b { display: block; font-size: 12px; font-family: var(--font-mono); margin-bottom: 2px; }
+.who .ai b { color: var(--accent); }
+.who .me b { color: var(--human); }
+.out { font-size: 13.5px; color: var(--muted); }
+@media (max-width: 600px) { .who { grid-template-columns: 1fr; } .step { grid-template-columns: 40px minmax(0, 1fr); } .step .idx { padding-left: 12px; } }
+
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.card p { font-size: 14px; color: var(--muted); }
+@media (max-width: 640px) { .cards { grid-template-columns: 1fr; } }
+
+ul.plain { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; max-width: 70ch; }
+.callout { border-left: 3px solid var(--gate); background: var(--gate-soft); padding: 14px 16px; border-radius: 0 8px 8px 0; display: flex; flex-direction: column; gap: 6px; }
+.mermaid-wrap { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; overflow-x: auto; }
+pre.mermaid { background: none; padding: 0; text-align: center; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="page">
+
+<header>
+  <div class="eyebrow">fe-task · Claude Code 워크스페이스</div>
+  <h1>FE 과제 파이프라인</h1>
+  <p class="lead">5시간짜리 프론트엔드 과제를 AI와 함께 수행하는 방법. AI는 분석·구현·검증을 맡고, 해석과 선택은 내가 한다. 그 판단이 제출물에서 읽히도록 만드는 것이 이 체계의 목적이다.</p>
+</header>
+
+<section>
+  <div class="section-head"><span class="num">목표</span><h2>무엇으로 평가받는가</h2></div>
+  <p>최종 목표는 <b>AI를 잘 활용하되, 판단 근거가 분명하고, 안정적이며, 과하지 않은 서비스</b>를 만드는 것. 제출물은 세 축으로 읽힌다.</p>
+  <div class="axes">
+    <div class="axis"><b>완성도</b><span>받자마자 실행되고, 요구사항과 로딩·에러·빈 상태가 처리되어 있는가. 시간 대부분을 구현에 쓴다.</span></div>
+    <div class="axis"><b>차별성</b><span>기능을 더 넣는 것보다 AI 냄새를 걷어내고, 사용자 관점 개선 1~2개를 근거와 함께 넣는 것.</span></div>
+    <div class="axis"><b>고민</b><span>가정·선택·포기한 것이 README, 테스트 이름, 커밋에서 확인되는가. 면접에서 내 말로 설명되는가.</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head"><span class="num">한눈에</span><h2>5시간 배분</h2></div>
+  <p>과정 단계는 짧게, 구현에 155분을 몰아준다. 밑줄 친 단계는 내가 승인해야 다음으로 넘어가는 gate다.</p>
+  <div class="timeline" role="img" aria-label="시작 15분, 이해 30분, 전략 10분, 계획 15분, 구현 155분, 리뷰 25분, README 15분, 평가 20분, 버퍼 15분">
+    <div class="bar">
+      <div class="seg" style="flex:15">0</div>
+      <div class="seg gate" style="flex:30">이해</div>
+      <div class="seg" style="flex:10">2</div>
+      <div class="seg gate" style="flex:15">계획</div>
+      <div class="seg impl gate" style="flex:155">4 구현 · 그룹 QA · 커밋 — 155m</div>
+      <div class="seg gate" style="flex:25">리뷰</div>
+      <div class="seg" style="flex:15">6</div>
+      <div class="seg gate" style="flex:20">평가</div>
+      <div class="seg buffer" style="flex:15">버퍼</div>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--accent-soft);border:1px solid var(--accent)"></i>구현</span>
+      <span><i style="background:var(--gate)"></i>gate (내 승인 필요)</span>
+      <span>지연이 15분을 넘으면 축소선(Nice → Should)을 조정한다</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head"><span class="num">시작하기</span><h2>명령 모음</h2></div>
+  <pre><code>cd ~/Desktop/fe-task && claude
+
+/fe new &lt;과제명&gt; &lt;zip | git URL | 디렉토리 | none&gt; [JD URL]
+/fe                 # 현재 단계 이어서 실행 (새 세션이나 /compact 후에도)
+/fe status          # 경과 시간, 지연, 커밋 진행, G 대응, 결정 개수
+/fe goto review     # 특정 단계로 이동
+
+/decide &lt;주제&gt;      # 과제 안의 결정 기록 (D / note N / reject X)
+/fe-tune note &lt;문제&gt; # 파이프라인 자체의 문제를 기록하고 과제로 복귀</code></pre>
+  <div class="table-wrap"><table>
+    <thead><tr><th>명령</th><th>무엇을 기록·변경하나</th><th>언제</th></tr></thead>
+    <tbody>
+      <tr><td class="nowrap"><code>/fe</code></td><td>과제 진행 (progress.md)</td><td>항상</td></tr>
+      <tr><td class="nowrap"><code>/decide</code></td><td>이 과제의 판단 (decisions.md) → README·면접 재료</td><td>선택이 생길 때마다</td></tr>
+      <tr><td class="nowrap"><code>/fe-tune</code></td><td>파이프라인 자체 (skill·hook·references) → tuning-log.md</td><td>테스트 중 이상한 점을 발견했을 때</td></tr>
+    </tbody>
+  </table></div>
+  <p>0단계에서 회사가 따로 준 평가 기준이 있는지 묻는다. 미리 준비해 두면 빠르다. JD URL은 선택이며, 토스가 아닌 회사도 같은 방식으로 동작한다.</p>
+</section>
+
+<section>
+  <div class="section-head"><span class="num">단계</span><h2>각 단계에서 AI와 내가 하는 일</h2></div>
+  <div class="steps">
+
+    <div class="step"><div class="idx">0</div><div class="body">
+      <div class="title"><h3>시작</h3><span class="cmd">fe-start · lint-setup</span><span class="time">15m</span></div>
+      <div class="who">
+        <div class="ai"><b>AI</b>작업 공간 생성, 원본을 base 커밋으로 고정, 설치·빌드·테스트 기준선 측정(기존 실패 분리), dev 서버 기동, JD로 회사 프로필 작성</div>
+        <div class="me"><b>나</b>모드 확정(처음부터 / 스타터 / 주어진 레포), git 계정 확인, AI 정책·제출 방식·배포·시안 확인, lint 설정 여부</div>
+      </div>
+      <div class="out">AI 사용 금지 과제면 여기서 멈추고 진행 여부를 직접 결정한다.</div>
+    </div></div>
+
+    <div class="step"><div class="idx">1</div><div class="body">
+      <div class="title"><h3>이해</h3><span class="cmd">fe-understand</span><span class="time">30m</span><span class="pill gate">gate</span></div>
+      <div class="who">
+        <div class="ai"><b>AI</b>탐색 에이전트 2개로 코드 구조·핵심 시나리오를 file:line까지 추적, 요구사항 분해, 시안의 화면·상태 정리, 기존 코드 문제점 수집 → 보드 "이해" 섹션</div>
+        <div class="me"><b>나</b>해석과 Must/Should/Nice, 모호점의 가정, 처리할 엣지케이스, 테스트 대상과 안 할 것, 기존 코드 문제를 고칠지 제안만 할지</div>
+      </div>
+      <div class="out">산출물: 보드 "이해" · 가정은 N, 구조에 영향을 주는 것만 D로 기록</div>
+    </div></div>
+
+    <div class="step"><div class="idx">2</div><div class="body">
+      <div class="title"><h3>전략</h3><span class="cmd">fe-strategy</span><span class="time">10m</span></div>
+      <div class="who">
+        <div class="ai"><b>AI</b>갈림길이 있는 결정만 골라 대안 2~3개와 추천 제시(스택, 디렉토리, 데이터 소스·mock, 상태·비동기, 핵심 패턴, 테스트 환경), 내 선택의 사이드 이펙트 검토</div>
+        <div class="me"><b>나</b>선택과 이유. 이유는 내 말 그대로 기록된다</div>
+      </div>
+      <div class="out">산출물: strategy.md (결정 요약, 디렉토리 트리, 데이터 흐름)</div>
+    </div></div>
+
+    <div class="step"><div class="idx">3</div><div class="body">
+      <div class="title"><h3>커밋 계획</h3><span class="cmd">fe-plan</span><span class="time">15m</span><span class="pill gate">gate</span></div>
+      <div class="who">
+        <div class="ai"><b>AI</b>커밋 단위별 메시지·소유 파일·의존성·병렬 그룹·수용 기준·예상 시간, e2e 핵심 흐름 2~3개, 시간 초과 시 축소선</div>
+        <div class="me"><b>나</b>전략과 계획을 함께 승인, 축소선 위치 결정</div>
+      </div>
+      <div class="out">커밋 목록이 곧 plan이다. git log만 읽어도 설정 → 계약 → 로직 → UI → 엣지 순서가 보이도록.</div>
+    </div></div>
+
+    <div class="step"><div class="idx">4</div><div class="body">
+      <div class="title"><h3>구현</h3><span class="cmd">fe-implement · fe-qa</span><span class="time">155m</span><span class="pill gate">그룹마다 gate</span></div>
+      <div class="who">
+        <div class="ai"><b>AI</b>구현 에이전트 최대 3개를 같은 작업 트리에서 병렬로(소유 파일이 겹치지 않음), 범위 초과·AI 냄새 점검, 자동 검증, 핵심 흐름 e2e를 레포 밖에서 백그라운드 실행, QA 카드 작성</div>
+        <div class="me"><b>나</b>QA 카드의 시나리오를 직접 눌러보고 승인, 에이전트가 올린 "결정 필요" 판단</div>
+      </div>
+      <div class="out">승인 후 단위마다 소유 파일만 스테이징해 plan 순서대로 커밋. e2e 스크립트와 스크린샷은 커밋하지 않는다.</div>
+    </div></div>
+
+    <div class="step"><div class="idx">5</div><div class="body">
+      <div class="title"><h3>리뷰</h3><span class="cmd">fe-review</span><span class="time">25m</span><span class="pill gate">gate</span></div>
+      <div class="who">
+        <div class="ai"><b>AI</b>새 맥락의 리뷰어 2개: 품질(code-style, 패턴 신호, FF 4기준, AI 냄새)과 영향 범위(공통 모듈 변경, 사용처, 회귀). 메인이 지적을 사실 확인하고 틀린 것은 버림</div>
+        <div class="me"><b>나</b>지적마다 수정 / 수용(이유) / 거절(이유)</div>
+      </div>
+      <div class="out">리뷰어에게 결정 기록을 주지 않는다. 기록 없이도 코드가 설명되는지 보기 위해서.</div>
+    </div></div>
+
+    <div class="step"><div class="idx">6</div><div class="body">
+      <div class="title"><h3>README</h3><span class="cmd">fe-readme</span><span class="time">15m</span></div>
+      <div class="who">
+        <div class="ai"><b>AI</b>결정 기록으로 초안 작성: 실행 방법, 가정 → 테스트 파일 링크, 의사결정 → 커밋 링크, 하지 않은 것, AI 활용(역할 표 + 판단 사례)</div>
+        <div class="me"><b>나</b>문장을 내 말투로 고침. AI는 그 방향을 나머지 섹션에도 맞춤</div>
+      </div>
+    </div></div>
+
+    <div class="step"><div class="idx">7</div><div class="body">
+      <div class="title"><h3>평가</h3><span class="cmd">fe-evaluate</span><span class="time">20m</span><span class="pill gate">gate</span></div>
+      <div class="who">
+        <div class="ai"><b>AI</b>clean clone만 받은 면접관 에이전트가 기준표로 채점, 결정 기록과 대조해 "판단했지만 제출물에 안 드러난 것" 찾기, 최종 제출 점검</div>
+        <div class="me"><b>나</b>고칠 것 선택, <b>면접 리허설</b>에서 질문 5개에 먼저 직접 답하기</div>
+      </div>
+    </div></div>
+
+  </div>
+</section>
+
+<section>
+  <div class="section-head"><span class="num">최우선</span><h2>회사가 명시한 평가 기준</h2></div>
+  <p>과제 안내에 "이런 점을 중점적으로 봅니다"가 있으면 0단계에서 원문 그대로 뽑아 <code>G-1</code>, <code>G-2</code>…로 번호를 붙인다. G는 이 체계의 모든 규칙보다 우선한다.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>단계</th><th>G가 쓰이는 방식</th></tr></thead>
+    <tbody>
+      <tr><td class="nowrap">0 시작</td><td>원문 인용, 지키는 방법 해석, 내 규칙과의 충돌 확인(충돌하면 G를 따르고 D로 기록)</td></tr>
+      <tr><td class="nowrap">1 이해</td><td>보드 맨 위에 표시. G와 직결된 요구사항은 Must</td></tr>
+      <tr><td class="nowrap">2 전략</td><td>결정마다 관련 G를 대안 비교의 첫 기준으로</td></tr>
+      <tr><td class="nowrap">3 계획</td><td>모든 G가 최소 한 단위에 연결되어야 승인. G에 연결된 단위는 범위를 줄일 때도 빼지 않음</td></tr>
+      <tr><td class="nowrap">4 구현</td><td>구현 에이전트가 단위의 G 원문을 받고, 보고서에 대응 방법을 적음</td></tr>
+      <tr><td class="nowrap">5 리뷰 · 7 평가</td><td>리뷰어와 면접관이 G별 충족 여부를 가장 먼저 채점</td></tr>
+      <tr><td class="nowrap">6 README</td><td>기준마다 제출물의 어디에서 확인할 수 있는지 연결</td></tr>
+    </tbody>
+  </table></div>
+  <p>잊히지 않게 하는 장치: G 목록은 <code>progress.md</code> 상단에 있고, 메시지마다 hook이 진행 중 과제의 G를 맥락에 넣는다. <code>/compact</code> 뒤에도 사라지지 않는다. 회사가 주석을 요구하면 <code>notes/allow-comments</code>로 주석 검사를 끈다.</p>
+</section>
+
+<section>
+  <div class="section-head"><span class="num">판단의 증거</span><h2>AI를 썼지만 판단은 내가 했다는 것을 보여주는 장치</h2></div>
+  <p>결정은 <code>decide</code>로 세 종류로 남긴다. 많이 남기는 게 목적이 아니다. 핵심 결정은 과제당 4~6개.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>ID</th><th>언제</th><th>기록</th></tr></thead>
+    <tbody>
+      <tr><td class="nowrap"><b>D</b> 핵심 결정</td><td>구조에 영향, 되돌리기 비쌈, 면접에서 설명할 가치</td><td>맥락 → 대안 2~3 + AI 추천 → 내 선택과 이유(원문 인용) → AI의 사이드 이펙트 검토</td></tr>
+      <tr><td class="nowrap"><b>N</b> 메모</td><td>가정 하나, 엣지케이스 처리 여부, 축소선 이동, 리뷰 수용</td><td>한 줄</td></tr>
+      <tr><td class="nowrap"><b>X</b> 거절</td><td>AI 제안을 거절하거나 고쳤을 때</td><td>AI 제안 → 내 이유 → 대신 한 것</td></tr>
+    </tbody>
+  </table></div>
+  <div class="mermaid-wrap"><pre class="mermaid">
+flowchart LR
+  A[결정이 필요한 지점] --> B[AI: 대안 2~3 + 추천]
+  B --> C[나: 선택 + 이유]
+  C --> D[AI: 사이드 이펙트 검토]
+  D -->|문제 없음| E[decisions.md]
+  D -->|충돌·시간 초과| C
+  E --> F[README 의사결정 · AI 활용]
+  E --> G[테스트 이름 · 커밋 본문]
+  </pre></div>
+  <div class="cards">
+    <div class="card"><h3>출처 표기</h3><p>사용자 발의 / AI 제안 → 수용 / 수정 / 거절. README의 역할 구분이 이 표기에서 나온다. 비율을 맞추려고 거절을 만들지 않는다.</p></div>
+    <div class="card"><h3>제출물에서 확인 가능하게</h3><p>가정은 테스트 이름으로 고정하고, 리뷰 반영 커밋 본문에 이유를 한 줄 적는다. README의 주장은 테스트·커밋 링크로 연결한다.</p></div>
+    <div class="card"><h3>새 맥락의 검증</h3><p>리뷰어와 평가자는 결정 기록을 보지 못한다. 그들이 의도를 못 읽었다면 코드나 README가 아직 설명하지 못하고 있다는 뜻이다.</p></div>
+    <div class="card"><h3>면접 리허설</h3><p>평가자가 뽑은 질문 5개에 내가 먼저 답하고, AI는 코드 근거로 맞는지 짚는다. 결국 증거는 내 설명이다.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head"><span class="num">코드 스타일</span><h2>토스 커뮤니티 기준, 근거와 예외까지</h2></div>
+  <p>규칙은 두 문서로 나뉜다. <code>code-style.md</code>는 어떻게 쓰는가(S1~S36), <code>design-patterns.md</code>는 언제 어떤 구조를 고르는가(P0~P14). 회사가 토스가 아니어도 같은 기준을 쓴다.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>적용 순서</th><th>내용</th></tr></thead>
+    <tbody>
+      <tr><td class="nowrap">1</td><td>주어진 레포의 lint · formatter · tsconfig · 테스트 명명 · 커밋 컨벤션</td></tr>
+      <tr><td class="nowrap">2</td><td>code-style · design-patterns (도구가 정하지 않은 모든 것)</td></tr>
+      <tr><td class="nowrap">3</td><td>일반 관례</td></tr>
+    </tbody>
+  </table></div>
+  <p>모든 규칙은 같은 형식을 따른다. <b>쓰지 않는 조건</b>이 성급한 추상화를 막고, <b>예외</b>는 어떤 상황에서 왜 다르게 하는지를 적는다.</p>
+  <pre><code>규칙 / 근거 [FF] [OSS:repo] [toss.tech] [간접] [내 판단] / 쓰지 않는 조건 / 예외(상황 → 방법 → 이유) / 예시 / 면접 한 줄</code></pre>
+  <div class="cards">
+    <div class="card"><h3>P0 추상화 원칙</h3><p>변경을 예측한 만큼만 추상화한다. 사용처마다 달라질 여지가 있으면 중복을 허용하고, 함께 안 바뀌면 오류가 나는 것만 공통화한다.</p></div>
+    <div class="card"><h3>대표 규칙</h3><p>function 선언 + named export, type 우선, 불가능한 상태는 Discriminated Union, union 분기는 switch + never, 훅 반환은 1개 값 / 2개 튜플 / 3개 이상 객체, 클릭 가능한 것은 button이나 a.</p></div>
+    <div class="card"><h3>대표 패턴</h3><p>도메인 colocation과 도메인 간 import 금지, composition 먼저 Context는 나중, Suspense·ErrorBoundary 경계, render props로 데이터 경계 드러내기, 결과가 필요한 오버레이는 Promise.</p></div>
+    <div class="card"><h3>토스와 다르게 정한 것</h3><p>주석 금지는 내 규칙이다. 토스 OSS는 JSDoc과 "왜" 주석을 쓴다. 이 차이와 reduce 대신 for, 커버리지 100% 같은 라이브러리용 규칙의 제외 이유를 문서에 남겼다.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head"><span class="num">모드</span><h2>처음부터 하는 과제와 이어받는 과제</h2></div>
+  <div class="table-wrap"><table>
+    <thead><tr><th></th><th>처음부터</th><th>스타터 템플릿</th><th>주어진 레포</th></tr></thead>
+    <tbody>
+      <tr><td class="nowrap">base 커밋</td><td>empty tree</td><td>원본 코드</td><td>원본 코드 또는 기존 HEAD</td></tr>
+      <tr><td class="nowrap">도구</td><td>lint-setup으로 토스 기준 설정</td><td>레포 설정</td><td>레포 설정만 따름, 일괄 포맷 금지</td></tr>
+      <tr><td class="nowrap">구조</td><td>도메인 colocation</td><td>도메인 colocation</td><td>최상위 구조 유지, 새 기능 폴더 안에서 colocation</td></tr>
+      <tr><td class="nowrap">기존 코드</td><td>—</td><td>—</td><td>공통 모듈 보호, 문제는 점진적 개선 제안으로</td></tr>
+      <tr><td class="nowrap">평가 C4</td><td colspan="2">초기 설정 판단 (스택·구조가 규모에 맞는가)</td><td>변경 범위 최소화 + 개선안</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <div class="section-head"><span class="num">평가 기준표</span><h2>면접관은 무엇을 보나</h2></div>
+  <p><code>evaluation-rubric.md</code>는 회사와 무관한 공통 기준이고, JD에서 뽑은 회사 프로필의 신호로 가중을 조정한다. 모든 채점에는 file:line이나 커밋 근거가 붙는다.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>영역</th><th>질문</th><th>핵심 항목</th></tr></thead>
+    <tbody>
+      <tr><td class="nowrap">A 완성도</td><td>받자마자 제대로 동작하는가</td><td>요구사항 충족, 실행 재현성, 로딩·에러·빈 상태</td></tr>
+      <tr><td class="nowrap">B 코드 품질</td><td>동료가 내일 수정하기 쉬운가</td><td>가독성, 예측 가능성, 응집도·디렉토리, 엄격한 TS</td></tr>
+      <tr><td class="nowrap">C 설계·판단</td><td>왜 이렇게 했는지 설명되는가</td><td>문제 정의, 추상화 수준, 기존 코드 대응</td></tr>
+      <tr><td class="nowrap">D AI와 판단</td><td>AI를 썼지만 판단은 내가 했는가</td><td>판단 증거, AI 냄새 없음, 설명 가능성</td></tr>
+      <tr><td class="nowrap">E 협업 신호</td><td>같이 일하기 좋은가</td><td>커밋 단위·순서, 테스트, README</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <div class="section-head"><span class="num">안전장치</span><h2>규칙을 사람 기억에 맡기지 않는 것들</h2></div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>장치</th><th>하는 일</th></tr></thead>
+    <tbody>
+      <tr><td class="nowrap">주석 검사 hook</td><td>파일을 수정할 때마다 TypeScript 파서로 <b>이번에 추가한 줄</b>의 주석만 찾는다. 문자열·JSX 텍스트·URL은 오탐하지 않고, 기존 코드의 주석은 건드리지 않는다. 도구 지시 주석은 예외.</td></tr>
+      <tr><td class="nowrap">commit-msg hook</td><td>AI attribution 줄을 막고, Conventional Commits 형식을 검사한다. 레포 컨벤션이 다르면 형식 검사만 끈다.</td></tr>
+      <tr><td class="nowrap">평가 기준 주입 hook</td><td>메시지마다 진행 중 과제의 현재 단계와 G 목록을 맥락에 넣는다.</td></tr>
+      <tr><td class="nowrap">attribution 설정</td><td>Claude Code의 커밋·PR attribution을 끈다.</td></tr>
+      <tr><td class="nowrap">base 커밋 · 기준선</td><td>원본을 고정해 내 변경만 diff로 보이게 하고, 원래 실패하던 것을 분리해 둔다.</td></tr>
+      <tr><td class="nowrap">소유 파일</td><td>병렬 에이전트는 자기 파일만 수정하고 커밋하지 않는다. 메인이 스테이징을 소유 목록과 대조한다.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <div class="section-head"><span class="num">튜닝</span><h2>과제를 테스트하며 파이프라인 고치기</h2></div>
+  <p>실제 과제를 돌려 보며 skill을 다듬는다. <code>/fe-tune</code>은 과제 레포를 건드리지 않고 파이프라인 파일만 고치며, 모든 항목을 <code>tuning-log.md</code>에 <code>T-번호</code>로 남긴다.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>명령</th><th>언제</th><th>하는 일</th></tr></thead>
+    <tbody>
+      <tr><td class="nowrap"><code>note &lt;문제&gt;</code></td><td>과제 진행 중 (기본)</td><td>단계·시각과 함께 한 항목 기록 후 즉시 과제로 복귀</td></tr>
+      <tr><td class="nowrap"><code>fix &lt;문제 | T-번호&gt;</code></td><td>흐름을 막는 문제</td><td>원인 지침 찾기 → 수정안 → 승인 → 다른 파일과의 일관성 점검 → 실행 검증 → 진행 중 과제의 notes 맞추기</td></tr>
+      <tr><td class="nowrap"><code>review</code></td><td>과제 종료 후, 단계 사이</td><td>열린 항목을 원인별로 묶어 처리, 필요하면 이 문서를 갱신</td></tr>
+      <tr><td class="nowrap"><code>list</code></td><td>언제든</td><td>열린 항목 보기</td></tr>
+    </tbody>
+  </table></div>
+  <div class="cards">
+    <div class="card"><h3>테스트 중엔 note</h3><p>5시간 안에서 파이프라인을 고치는 데 시간을 쓰면 테스트 결과가 왜곡된다. 흐름을 막는 것만 fix.</p></div>
+    <div class="card"><h3>덧붙이기보다 고치기</h3><p>지침이 길어질수록 지켜지지 않는다. 기존 문장을 고치거나 지우고, 한 과제만의 상황은 예외 한 줄로.</p></div>
+  </div>
+<pre><code>### T-04 [open] 1단계 이해 · 예시과제 · 10:42
+- 문제(사용자 원문): "기존 코드 문제점이 너무 많이 나와서 고를 수가 없음"
+- 의심 위치: fe-understand §2 "기존 코드 문제점" 섹션
+- 영향: 이해 단계 10분 초과</code></pre>
+  <p>skill·references 수정은 같은 세션에 바로 반영된다. settings나 hook 등록을 바꿨는데 동작하지 않으면 세션을 다시 시작한다.</p>
+</section>
+
+<section>
+  <div class="section-head"><span class="num">검증</span><h2>만들면서 확인한 것</h2></div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>대상</th><th>방법</th><th>결과</th></tr></thead>
+    <tbody>
+      <tr><td class="nowrap">스타일 근거</td><td>새 맥락의 에이전트가 모든 [FF]·[OSS]·[toss.tech] 인용을 토스 레포와 글 원문에 대조</td><td>출처 문제 19건 수정(과장된 근거는 [간접]·[내 판단]으로), 누락 규칙(접근성, 도메인 간 import, 퍼널 스텝 설계 등) 추가, 토스 안에서 갈리는 규칙은 "갈림"으로 표시</td></tr>
+      <tr><td class="nowrap">파이프라인</td><td>새 맥락의 에이전트가 5시간 실행을 가정하고 빈틈·과잉·불일치 점검</td><td>구현 시간 120 → 155분, QA를 그룹 단위로, 결정 기록을 D/N/X로 나눔, 경로·명령 오류 수정, 평가자 격리</td></tr>
+      <tr><td class="nowrap">주석 hook</td><td>문자열·템플릿 리터럴·JSX 텍스트·URL·지시 주석·기존 주석이 섞인 파일로 실행</td><td>시험한 사례에서 오탐 0, 새로 추가한 주석만 검출</td></tr>
+      <tr><td class="nowrap">lint 템플릿</td><td>ESLint 9 + typescript-eslint 8 + react-hooks 7로 실행</td><td>d.ts·Next 특수 파일·stories 예외, switch 누락, default export 우회 검출 확인</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <div class="section-head"><span class="num">파일</span><h2>구성</h2></div>
+  <pre><code>fe-task/
+├─ CLAUDE.md                     항상 적용되는 규칙과 파이프라인
+├─ .claude/
+│  ├─ settings.json              attribution off, hooks, 권한
+│  ├─ hooks/                     check-comments.mjs, inject-criteria.sh, commit-msg
+│  ├─ agents/                    fe-implementer, fe-reviewer, fe-evaluator
+│  └─ skills/                    fe, fe-start, lint-setup, fe-understand, fe-strategy,
+│                                fe-plan, fe-implement, fe-qa, fe-review, fe-readme,
+│                                fe-evaluate, decide, fe-tune
+├─ references/
+│  ├─ code-style.md              S1~S36
+│  ├─ design-patterns.md         P0~P14
+│  ├─ evaluation-rubric.md       A~E 22개 항목
+│  ├─ ai-smell.md                코드 · README · 커밋
+│  ├─ toss-frontend-style.md     원본 조사 자료
+│  └─ templates/                 progress, decisions, company, readme
+├─ tools/e2e/                    Playwright + TypeScript (레포 밖)
+├─ tuning-log.md                 파이프라인 튜닝 기록 (T-번호)
+└─ assignments/&lt;과제명&gt;/{repo, notes}</code></pre>
+</section>
+
+<section>
+  <div class="section-head"><span class="num">남은 일</span><h2>내가 검토할 것</h2></div>
+  <div class="callout">
+    <b>code-style.md와 design-patterns.md는 내 스타일의 기준이므로 직접 검토가 필요하다.</b>
+    <ul class="plain">
+      <li><code>[내 판단]</code>, <code>[간접]</code> 태그가 붙은 규칙과 숫자 임계값("2곳 이상", "3단계")을 받아들일지</li>
+      <li>토스 안에서 갈리는 규칙(function vs 화살표, interface 혼용, 테스트 명명)에서 고른 쪽이 맞는지</li>
+      <li>각 규칙의 "쓰지 않는 조건"과 "예외"가 내가 실제로 판단하는 방식과 맞는지</li>
+      <li>"면접 한 줄"을 내 말로 바꿀 수 있는지</li>
+      <li>처음 과제를 돌린 뒤 시간 배분과 gate 개수가 적당했는지 → <code>/fe-tune review</code>로 정리</li>
+    </ul>
+  </div>
+</section>
+
+</div>

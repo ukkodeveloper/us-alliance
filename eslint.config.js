@@ -14,7 +14,7 @@ const DEFAULT_EXPORT_ALLOWED = [
 ];
 
 export default defineConfig(
-  { ignores: ['dist', 'build', '.next', 'coverage', 'node_modules'] },
+  { ignores: ['dist', 'build', '.next', 'coverage', 'node_modules', 'harness'] },
   {
     files: ['src/**/*.{ts,tsx}'],
     extends: [js.configs.recommended, ...tseslint.configs.recommended, jsxA11y.flatConfigs.recommended],

@@ -1,0 +1,9 @@
+{
+  "name": "fe-task-tools",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "typescript": "^5.6.0"
+  }
+}

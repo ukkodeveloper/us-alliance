@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+if grep -qiE '^co-authored-by:.*(claude|anthropic)|generated with \[?claude|claude\.(ai|com)/code' "$1"; then
+  echo "commit-msg: AI attribution 줄이 포함되어 커밋을 막았습니다." >&2
+  exit 1
+fi
+if [[ -f "$(git rev-parse --git-dir)/fe-skip-format" ]]; then
+  exit 0
+fi
+if ! head -1 "$1" | grep -qE '^(feat|fix|refactor|test|docs|style|chore|perf|build|ci)(\([^)]+\))?!?: .+'; then
+  echo "commit-msg: Conventional Commits 형식이 아닙니다. 예) feat(cart): 수량 변경 기능 추가" >&2
+  exit 1
+fi
