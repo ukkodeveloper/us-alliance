@@ -1,7 +1,18 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { RouterProvider } from 'react-router';
+
+import { router } from './router';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: 1, refetchOnWindowFocus: false },
+  },
+});
+
 export function App() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-50">
-      <h1 className="text-2xl font-bold text-gray-900">us-alliance</h1>
-    </main>
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>
   );
 }
