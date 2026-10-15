@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router';
 
@@ -17,6 +17,7 @@ const INITIAL_VALUES: Credentials = { email: '', password: '' };
 
 export function AuthForm({ submitLabel, authenticate }: AuthFormProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [values, setValues] = useState(INITIAL_VALUES);
   const [isSubmitAttempted, setIsSubmitAttempted] = useState(false);
 
@@ -24,6 +25,7 @@ export function AuthForm({ submitLabel, authenticate }: AuthFormProps) {
     mutationFn: authenticate,
     onSuccess: ({ access_token, refresh_token }) => {
       setTokens({ accessToken: access_token, refreshToken: refresh_token });
+      queryClient.clear();
       navigate('/', { replace: true });
     },
   });
