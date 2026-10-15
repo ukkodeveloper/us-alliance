@@ -27,7 +27,7 @@ function ModalDialog({ onClose, title, children, footer }: Omit<ModalProps, 'ope
   useEffect(
     function closeOnEscape() {
       function handleKeyDown(event: KeyboardEvent) {
-        if (event.key === 'Escape') {
+        if (event.key === 'Escape' && !event.defaultPrevented) {
           onClose();
         }
       }
