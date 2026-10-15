@@ -24,7 +24,10 @@ export function createPublishPlan(state: PublishServerState, options: PublishOpt
 
   switch (visibility) {
     case 'public':
-      return [...planPublicContent(state), ...planNotification(state.notification, notification, null)];
+      return [
+        ...planPublicContent(state),
+        ...planNotification(state.notification, notification, keptNotificationSendAt(state)),
+      ];
     case 'private':
       return [...planPrivateContent(state), ...planNotification(state.notification, { send: false }, null)];
     case 'scheduled': {
@@ -44,8 +47,16 @@ export function createPublishPlan(state: PublishServerState, options: PublishOpt
   }
 }
 
+function isAlreadyPublic(state: PublishServerState) {
+  return state.status === 'public' && !state.isScheduled;
+}
+
+function keptNotificationSendAt(state: PublishServerState) {
+  return isAlreadyPublic(state) ? (state.notification?.scheduled_at ?? null) : null;
+}
+
 function planPublicContent(state: PublishServerState): PublishStep[] {
-  if (state.status === 'public' && !state.isScheduled) {
+  if (isAlreadyPublic(state)) {
     return [];
   }
   return [{ type: 'changeStatus', status: 'public' }];

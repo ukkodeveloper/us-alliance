@@ -107,6 +107,21 @@ describe('createPublishPlan - 공개', () => {
       { type: 'createNotification', title: SEND_TO_ALL.title, targetType: 'all' },
     ]);
   });
+
+  it('이미 공개된 콘텐츠의 예약 알람은 그대로 두고 즉시 발송하지 않는다', () => {
+    const state = serverState({ ...PUBLIC_STATE, notification: notification() });
+
+    expect(createPublishPlan(state, options({ visibility: 'public', notification: SEND_TO_ALL }))).toEqual([]);
+  });
+
+  it('이미 공개된 콘텐츠의 예약 알람 제목을 바꾸면 예약 시각은 유지하고 내용만 수정한다', () => {
+    const state = serverState({ ...PUBLIC_STATE, notification: notification() });
+    const changedTitle = { ...SEND_TO_ALL, title: '제목을 바꿨어요' };
+
+    expect(createPublishPlan(state, options({ visibility: 'public', notification: changedTitle }))).toEqual([
+      { type: 'updateNotification', notificationId: NOTIFICATION_ID, title: changedTitle.title, targetType: 'all' },
+    ]);
+  });
 });
 
 describe('createPublishPlan - 비공개', () => {

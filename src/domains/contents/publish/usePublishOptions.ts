@@ -41,7 +41,7 @@ function toInitialValues(serverState: PublishServerState): PublishFormValues {
   return {
     visibility: isFirstPublish(serverState) ? 'public' : toInitialVisibility(serverState),
     scheduledAt: isScheduled && publishedAt != null ? new Date(publishedAt) : null,
-    sendNotification: true,
+    sendNotification: isFirstPublish(serverState) || notification != null,
     targetType: notification?.target_type ?? 'all',
     notificationTitle: notification?.title ?? '',
     isContentTitleUsed: false,

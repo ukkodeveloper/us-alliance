@@ -35,11 +35,39 @@ type PublishModalProps = {
   onPublished: () => void;
 };
 
+type PublishMutation = ReturnType<typeof usePublishMutation>;
+
+function usePublishMutation(contentId: number, onPublished: () => void) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (steps: PublishStep[]) => {
+      const result = await runPublishPlan(contentId, steps);
+      if (!result.ok) {
+        throw result.error;
+      }
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['contents'] });
+      void queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      onPublished();
+    },
+    onError: () => queryClient.invalidateQueries({ queryKey: contentQueries.detail(contentId).queryKey }),
+  });
+}
+
 export function PublishModal({ open, onClose, ...formProps }: PublishModalProps) {
   const { reset: resetQueryErrors } = useQueryErrorResetBoundary();
+  const publish = usePublishMutation(formProps.contentId, formProps.onPublished);
+
+  function handleClose() {
+    if (!publish.isPending) {
+      onClose();
+    }
+  }
 
   return (
-    <Modal open={open} onClose={onClose} title="발행하기">
+    <Modal open={open} onClose={handleClose} title="발행하기">
       <ErrorBoundary
         fallback={({ reset }) => (
           <div role="alert" className="flex flex-col items-center gap-3 py-10 text-sm text-gray-500">
@@ -58,32 +86,19 @@ export function PublishModal({ open, onClose, ...formProps }: PublishModalProps)
         )}
       >
         <Suspense fallback={<p className="py-10 text-center text-sm text-gray-500">발행 정보를 불러오는 중입니다.</p>}>
-          <PublishForm onClose={onClose} {...formProps} />
+          <PublishForm onClose={onClose} publish={publish} {...formProps} />
         </Suspense>
       </ErrorBoundary>
     </Modal>
   );
 }
 
-function PublishForm({ contentId, contentTitle, onClose, onPublished }: Omit<PublishModalProps, 'open'>) {
-  const queryClient = useQueryClient();
+type PublishFormProps = Omit<PublishModalProps, 'open'> & { publish: PublishMutation };
+
+function PublishForm({ contentId, contentTitle, onClose, onPublished, publish }: PublishFormProps) {
   const serverState = usePublishState(contentId);
   const { values, options, errors, canSchedule, setValues, validate } = usePublishOptions(serverState);
-
-  const { mutate, isPending, error } = useMutation({
-    mutationFn: async (steps: PublishStep[]) => {
-      const result = await runPublishPlan(contentId, steps);
-      if (!result.ok) {
-        throw result.error;
-      }
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['contents'] });
-      void queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      onPublished();
-    },
-    onError: () => queryClient.invalidateQueries({ queryKey: contentQueries.detail(contentId).queryKey }),
-  });
+  const { mutate, isPending, error } = publish;
 
   const isPrivate = values.visibility === 'private';
   const isNotificationLocked = serverState.notification != null && serverState.notification.send_status !== 'pending';
@@ -184,7 +199,7 @@ function PublishForm({ contentId, contentTitle, onClose, onPublished }: Omit<Pub
         </p>
       )}
       <div className="-mx-6 flex justify-end gap-2 border-t border-gray-100 px-6 pt-5">
-        <Button variant="outline" onClick={onClose}>
+        <Button variant="outline" onClick={onClose} disabled={isPending}>
           취소
         </Button>
         <Button type="submit" disabled={isPending}>

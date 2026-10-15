@@ -5,6 +5,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { type Content, contentQueries, type ContentSchedule } from '../../../api/contents';
 import { PublishModal } from './PublishModal';
+import { runPublishPlan } from './runPublishPlan';
+
+vi.mock('./runPublishPlan', () => ({ runPublishPlan: vi.fn() }));
 
 const CONTENT_ID = 7;
 const CONTENT_TITLE = '오늘의 시장 정리';
@@ -23,9 +26,9 @@ const PRIVATE_CONTENT: Content = {
 
 const NOT_SCHEDULED: ContentSchedule = { content_id: CONTENT_ID, is_scheduled: false, published_at: null };
 
-function renderPublishModal() {
+function renderPublishModal(content: Content = PRIVATE_CONTENT) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity } } });
-  queryClient.setQueryData(contentQueries.detail(CONTENT_ID).queryKey, PRIVATE_CONTENT);
+  queryClient.setQueryData(contentQueries.detail(CONTENT_ID).queryKey, content);
   queryClient.setQueryData(contentQueries.schedule(CONTENT_ID).queryKey, NOT_SCHEDULED);
   queryClient.setQueryData(contentQueries.notification(CONTENT_ID).queryKey, null);
   const onClose = vi.fn();
@@ -53,6 +56,18 @@ describe('PublishModal', () => {
 
     expect(screen.getByRole('radio', { name: '공개' })).toBeChecked();
     expect(screen.getByRole('radio', { name: '발송' })).toBeChecked();
+  });
+
+  it('알람이 없는 공개 콘텐츠는 미발송이 선택된 채 열린다', () => {
+    renderPublishModal({
+      ...PRIVATE_CONTENT,
+      status: 'public',
+      publish_status: 'published',
+      published_at: '2026-10-14T09:00:00+09:00',
+    });
+
+    expect(screen.getByRole('radio', { name: '공개' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: '미발송' })).toBeChecked();
   });
 
   it('공개에서 비공개로 바꾸면 발송 여부가 미발송으로 바뀌고 선택할 수 없다', async () => {
@@ -92,5 +107,17 @@ describe('PublishModal', () => {
     await user.click(screen.getByRole('checkbox', { name: '콘텐츠 제목 사용' }));
     expect(notificationTitle).toHaveValue('');
     expect(notificationTitle).toBeEnabled();
+  });
+
+  it('발행 요청이 끝나기 전에는 ESC와 취소로 모달을 닫을 수 없다', async () => {
+    vi.mocked(runPublishPlan).mockReturnValue(new Promise(() => undefined));
+    const { user, onClose } = renderPublishModal();
+
+    await user.click(screen.getByRole('radio', { name: '미발송' }));
+    await user.click(screen.getByRole('button', { name: '발행하기' }));
+    await user.keyboard('{Escape}');
+
+    expect(screen.getByRole('button', { name: '취소' })).toBeDisabled();
+    expect(onClose).not.toHaveBeenCalled();
   });
 });
