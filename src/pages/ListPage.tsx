@@ -1,9 +1,10 @@
-import { Link, useNavigate, useSearchParams } from 'react-router';
+import { useState } from 'react';
+import { Link, useSearchParams } from 'react-router';
 
 import { Button } from '../components/Button';
 import { GnbLayout } from '../components/layout/GnbLayout';
 import { useLogout } from '../domains/auth';
-import { ContentListSection } from '../domains/contents';
+import { ContentListSection, NewPostModal } from '../domains/contents';
 import { NotificationListSection } from '../domains/notifications';
 
 const TABS = [
@@ -20,7 +21,7 @@ function parseTab(value: string | null): Tab {
 export function ListPage() {
   const [searchParams] = useSearchParams();
   const activeTab = parseTab(searchParams.get('tab'));
-  const navigate = useNavigate();
+  const [isNewPostOpen, setIsNewPostOpen] = useState(false);
   const logout = useLogout();
 
   return (
@@ -43,13 +44,14 @@ export function ListPage() {
           <Button size="sm" variant="secondary" onClick={() => void logout()}>
             로그아웃
           </Button>
-          <Button size="sm" onClick={() => navigate('/contents/new')}>
+          <Button size="sm" onClick={() => setIsNewPostOpen(true)}>
             + 새 글쓰기
           </Button>
         </>
       }
     >
       {activeTab === 'contents' ? <ContentListSection /> : <NotificationListSection />}
+      <NewPostModal open={isNewPostOpen} onClose={() => setIsNewPostOpen(false)} />
     </GnbLayout>
   );
 }
