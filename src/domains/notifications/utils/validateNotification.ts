@@ -1,4 +1,4 @@
-import { type TargetType } from '../../../api/notifications';
+import { MAX_NOTIFICATION_TITLE_LENGTH, type TargetType } from '../../../api/notifications';
 
 export type NotificationFormValues = {
   targetType: TargetType;
@@ -11,8 +11,6 @@ export type NotificationField = keyof NotificationFormValues;
 export type NotificationFormErrors = Partial<Record<NotificationField, string>>;
 
 export type NotificationValidationResult = { ok: true } | { ok: false; errors: NotificationFormErrors };
-
-export const MAX_NOTIFICATION_TITLE_LENGTH = 50;
 
 const REQUIRED_MESSAGE = '필수 정보입니다.';
 

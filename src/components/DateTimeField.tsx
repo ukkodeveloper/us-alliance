@@ -11,16 +11,15 @@ type DateTimeFieldProps = {
   label: string;
   value: Date | null;
   onChange: (value: Date | null) => void;
-  minDate?: Date;
   placeholder?: string;
   error?: string;
 };
 
-export function DateTimeField({ label, value, onChange, minDate, placeholder, error }: DateTimeFieldProps) {
+export function DateTimeField({ label, value, onChange, placeholder, error }: DateTimeFieldProps) {
   const inputId = useId();
   const errorId = `${inputId}-error`;
   const hasError = error != null;
-  const earliestDate = minDate ?? new Date();
+  const earliestDate = new Date();
   const isEarliestDay = isSameDay(value ?? earliestDate, earliestDate);
 
   return (

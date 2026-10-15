@@ -13,15 +13,15 @@ import {
 } from '../../../api/notifications';
 import { type PublishStep } from './types';
 
-type PublishPlanResult = { ok: true } | { ok: false; completedSteps: number; error: ApiError };
+type PublishPlanResult = { ok: true } | { ok: false; error: ApiError };
 
 export async function runPublishPlan(contentId: number, steps: readonly PublishStep[]): Promise<PublishPlanResult> {
-  for (const [index, step] of steps.entries()) {
+  for (const step of steps) {
     try {
       await runStep(contentId, step);
     } catch (error) {
       if (error instanceof ApiError) {
-        return { ok: false, completedSteps: index, error };
+        return { ok: false, error };
       }
       throw error;
     }

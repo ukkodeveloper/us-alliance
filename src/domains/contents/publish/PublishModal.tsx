@@ -2,7 +2,7 @@ import { useMutation, useQueryClient, useQueryErrorResetBoundary } from '@tansta
 import { type FormEvent, Suspense } from 'react';
 
 import { contentQueries } from '../../../api/contents';
-import { TARGET_TYPE_LABELS, type TargetType } from '../../../api/notifications';
+import { MAX_NOTIFICATION_TITLE_LENGTH, TARGET_TYPE_LABELS, TARGET_TYPES } from '../../../api/notifications';
 import { Button } from '../../../components/Button';
 import { Checkbox } from '../../../components/Checkbox';
 import { DateTimeField } from '../../../components/DateTimeField';
@@ -10,12 +10,11 @@ import { ErrorBoundary } from '../../../components/ErrorBoundary';
 import { Modal } from '../../../components/Modal';
 import { RadioGroup } from '../../../components/RadioGroup';
 import { TextField } from '../../../components/TextField';
-import { createPublishPlan } from './publishPlan';
+import { createPublishPlan, isNotificationLocked } from './publishPlan';
 import { runPublishPlan } from './runPublishPlan';
 import { type PublishStep, type PublishVisibility } from './types';
 import { usePublishOptions } from './usePublishOptions';
 import { usePublishState } from './usePublishState';
-import { MAX_NOTIFICATION_TITLE_LENGTH } from './validatePublish';
 
 type SendChoice = 'send' | 'skip';
 
@@ -24,7 +23,6 @@ const SEND_CHOICE_OPTIONS: Array<{ value: SendChoice; label: string }> = [
   { value: 'skip', label: '미발송' },
 ];
 
-const TARGET_TYPES: TargetType[] = ['all', 'follower', 'member'];
 const TARGET_TYPE_OPTIONS = TARGET_TYPES.map(value => ({ value, label: TARGET_TYPE_LABELS[value] }));
 
 type PublishModalProps = {
@@ -101,7 +99,7 @@ function PublishForm({ contentId, contentTitle, onClose, onPublished, publish }:
   const { mutate, isPending, error } = publish;
 
   const isPrivate = values.visibility === 'private';
-  const isNotificationLocked = serverState.notification != null && serverState.notification.send_status !== 'pending';
+  const isLocked = isNotificationLocked(serverState.notification);
   const shouldSendNotification = !isPrivate && values.sendNotification;
 
   const visibilityOptions: Array<{ value: PublishVisibility; label: string; disabled?: boolean }> = [
@@ -151,14 +149,14 @@ function PublishForm({ contentId, contentTitle, onClose, onPublished, publish }:
       <div className="flex flex-col gap-1 border-b border-gray-100 pb-4">
         <h3 className="text-sm font-semibold text-gray-900">알람 설정</h3>
         <p className="text-xs text-gray-400">비공개 상태로 발행시 알람 설정은 자동으로 미발송으로 처리됩니다.</p>
-        {isNotificationLocked && <p className="text-xs text-gray-400">이미 발송된 알람은 변경할 수 없습니다.</p>}
+        {isLocked && <p className="text-xs text-gray-400">이미 발송된 알람은 변경할 수 없습니다.</p>}
       </div>
       <RadioGroup
         name="sendNotification"
         label="발송 여부"
         options={SEND_CHOICE_OPTIONS}
         value={shouldSendNotification ? 'send' : 'skip'}
-        disabled={isPrivate || isNotificationLocked}
+        disabled={isPrivate || isLocked}
         onChange={choice => setValues({ ...values, sendNotification: choice === 'send' })}
       />
       {shouldSendNotification && (
@@ -168,7 +166,7 @@ function PublishForm({ contentId, contentTitle, onClose, onPublished, publish }:
             label="대상자"
             options={TARGET_TYPE_OPTIONS}
             value={values.targetType}
-            disabled={isNotificationLocked}
+            disabled={isLocked}
             onChange={targetType => setValues({ ...values, targetType })}
           />
           <div className="flex flex-col gap-2">
@@ -178,7 +176,7 @@ function PublishForm({ contentId, contentTitle, onClose, onPublished, publish }:
               maxLength={MAX_NOTIFICATION_TITLE_LENGTH}
               value={values.notificationTitle}
               error={errors.notificationTitle}
-              disabled={isNotificationLocked || values.isContentTitleUsed}
+              disabled={isLocked || values.isContentTitleUsed}
               onChange={event => setValues({ ...values, notificationTitle: event.target.value })}
             />
             <div>
@@ -186,7 +184,7 @@ function PublishForm({ contentId, contentTitle, onClose, onPublished, publish }:
                 variant="chip"
                 label="콘텐츠 제목 사용"
                 checked={values.isContentTitleUsed}
-                disabled={isNotificationLocked}
+                disabled={isLocked}
                 onChange={event => handleContentTitleUsedChange(event.target.checked)}
               />
             </div>

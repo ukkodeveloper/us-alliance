@@ -37,7 +37,9 @@ export const CATEGORY_LABELS: Record<Category, string> = {
 
 export type ContentStatus = 'public' | 'private';
 
-export type PublishStatus = 'draft' | 'scheduled' | 'published';
+export const PUBLISH_STATUSES = ['published', 'scheduled', 'draft'] as const;
+
+export type PublishStatus = (typeof PUBLISH_STATUSES)[number];
 
 export const PUBLISH_STATUS_LABELS: Record<PublishStatus, string> = {
   draft: '비공개',

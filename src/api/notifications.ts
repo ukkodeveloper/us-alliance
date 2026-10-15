@@ -4,7 +4,11 @@ import { request } from './http';
 
 export const NOTIFICATION_PAGE_SIZE = 10;
 
-export type TargetType = 'all' | 'follower' | 'member';
+export const TARGET_TYPES = ['all', 'follower', 'member'] as const;
+
+export type TargetType = (typeof TARGET_TYPES)[number];
+
+export const MAX_NOTIFICATION_TITLE_LENGTH = 50;
 
 export type SendStatus = 'pending' | 'sent' | 'failed';
 
@@ -74,10 +78,6 @@ export function getNotifications({ page, limit }: NotificationListParams): Promi
   return request<NotificationList>(`/api/v1/notifications?${searchParams.toString()}`);
 }
 
-export function getNotification(id: number): Promise<Notification> {
-  return request<Notification>(`/api/v1/notifications/${id}`);
-}
-
 export function createNotification(body: CreateNotificationRequest): Promise<Notification> {
   return request<Notification>('/api/v1/notifications', { method: 'POST', json: body });
 }
@@ -102,10 +102,5 @@ export const notificationQueries = {
     queryOptions({
       queryKey: ['notifications', 'list', params],
       queryFn: () => getNotifications(params),
-    }),
-  detail: (id: number) =>
-    queryOptions({
-      queryKey: ['notifications', 'detail', id],
-      queryFn: () => getNotification(id),
     }),
 };

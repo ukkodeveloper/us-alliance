@@ -104,7 +104,7 @@ describe('runPublishPlan', () => {
       { type: 'deleteNotification', notificationId: NOTIFICATION_ID },
     ]);
 
-    expect(result).toEqual({ ok: false, completedSteps: 1, error: conflict });
+    expect(result).toEqual({ ok: false, error: conflict });
     expect(deleteNotification).not.toHaveBeenCalled();
   });
 

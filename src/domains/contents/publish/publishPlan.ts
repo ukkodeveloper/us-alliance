@@ -8,6 +8,10 @@ import {
   type PublishVisibility,
 } from './types';
 
+export function isNotificationLocked(notification: Notification | null) {
+  return notification != null && notification.send_status !== 'pending';
+}
+
 export function hasBeenPublished(state: PublishServerState) {
   return state.publishedAt != null && !state.isScheduled;
 }
@@ -91,7 +95,7 @@ function planNotification(
   option: NotificationOption,
   sendAt: string | null
 ): PublishStep[] {
-  if (existing != null && existing.send_status !== 'pending') {
+  if (isNotificationLocked(existing)) {
     return [];
   }
 

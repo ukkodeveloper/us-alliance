@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatDateTime, formatKoreanDateTime, formatListDate, toKstIsoString } from './date';
+import { formatDateTime, formatListDate, toKstIsoString } from './date';
 
 const LOCAL_DECEMBER_20_0905 = new Date(2025, 11, 20, 9, 5);
 
@@ -13,12 +13,6 @@ describe('formatListDate', () => {
 describe('formatDateTime', () => {
   it('알람 발송 날짜를 yyyy.MM.dd HH:mm 형식으로 보여준다', () => {
     expect(formatDateTime(LOCAL_DECEMBER_20_0905.toISOString())).toBe('2025.12.20 09:05');
-  });
-});
-
-describe('formatKoreanDateTime', () => {
-  it('선택한 예약 시간을 yyyy년 MM월 dd일 HH시 mm분 형식으로 보여준다', () => {
-    expect(formatKoreanDateTime(LOCAL_DECEMBER_20_0905)).toBe('2025년 12월 20일 09시 05분');
   });
 });
 

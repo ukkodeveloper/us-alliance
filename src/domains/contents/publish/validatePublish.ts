@@ -1,3 +1,4 @@
+import { MAX_NOTIFICATION_TITLE_LENGTH } from '../../../api/notifications';
 import { type PublishOptions } from './types';
 
 export type PublishField = 'scheduledAt' | 'notificationTitle';
@@ -10,8 +11,6 @@ type PublishValidationContext = {
   now: Date;
   canSchedule: boolean;
 };
-
-export const MAX_NOTIFICATION_TITLE_LENGTH = 50;
 
 export function validatePublish(
   { visibility, scheduledAt, notification }: PublishOptions,

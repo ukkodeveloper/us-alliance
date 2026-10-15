@@ -1,6 +1,6 @@
 import { useSearchParams } from 'react-router';
 
-import { CATEGORIES, type Category, PUBLISH_STATUS_LABELS, type PublishStatus } from '../../../api/contents';
+import { CATEGORIES, type Category, PUBLISH_STATUSES, type PublishStatus } from '../../../api/contents';
 
 const FIRST_PAGE = 1;
 
@@ -13,12 +13,8 @@ function parseCategory(rawCategory: string | null) {
   return CATEGORIES.find(category => category === rawCategory);
 }
 
-function isPublishStatus(value: string): value is PublishStatus {
-  return Object.hasOwn(PUBLISH_STATUS_LABELS, value);
-}
-
 function parsePublishStatus(rawPublishStatus: string | null) {
-  return rawPublishStatus != null && isPublishStatus(rawPublishStatus) ? rawPublishStatus : undefined;
+  return PUBLISH_STATUSES.find(publishStatus => publishStatus === rawPublishStatus);
 }
 
 export function useContentListParams() {
