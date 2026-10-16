@@ -12,7 +12,7 @@
 | `.claude/hooks/` | `inject-criteria.sh`: 매 메시지에 과제 평가 기준과 현재 단계를 넣음. `check-comments.mjs`: 새로 추가한 주석 줄을 막음. `commit-msg`: Conventional Commits 형식 검사, AI attribution 줄 차단 |
 | `.claude/settings.json` | 위 hook 등록, attribution 끄기, 읽기 전용 명령 허용 목록 |
 | `references/` | 코드 스타일·설계 패턴 기준(공개된 토스 프론트엔드 자료 조사 기반), 평가 기준표, AI 티 나는 코드·문장 점검표, 문서 템플릿 |
-| `tools/e2e/` | 과제 공용 Playwright 설정. e2e 스펙은 과정 산출물이라 레포에 넣지 않았습니다 |
+| `tools/e2e/` | 과제 공용 Playwright 설정과 이 과제의 e2e 스펙(`specs/`, API는 `mockApi.ts`가 메모리에서 흉내) |
 
 ## 이번 과제에서의 흐름
 
@@ -26,7 +26,19 @@
 
 - 다른 회사 이름이 들어간 예시 2곳을 일반 표현으로 바꿨습니다(`references/templates/company.md`, `references/evaluation-rubric.md`).
 - 다른 과제 이름이 들어간 예시 1곳을 바꿨습니다(`fe-tune`, `pipeline-guide.html`).
-- 제외한 파일: 개인 설정(`settings.local.json`), 다른 과제 폴더, 파이프라인 튜닝 기록, `package-lock.json`.
+- 제외한 파일: 개인 설정(`settings.local.json`), 다른 과제 폴더, 파이프라인 튜닝 기록, 진행 메모·보드, `package-lock.json`.
 - 개인 경로·이메일·API 키·토큰은 원본에도 없음을 확인했습니다.
+
+## e2e 실행
+
+dev 서버(`npm run dev`)를 띄운 상태에서:
+
+```bash
+cd harness/tools/e2e
+npm install && npx playwright install chromium
+BASE_URL=http://localhost:5173 E2E_DIR="$PWD/specs" npx playwright test --project=desktop
+```
+
+외부 API는 호출하지 않습니다. 모든 요청을 `specs/mockApi.ts`가 가로채 응답합니다.
 
 이 폴더는 레포 루트가 아니어서 이 레포를 Claude Code로 열어도 자동으로 로드되지 않습니다.
