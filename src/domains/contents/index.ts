@@ -1,4 +1,5 @@
 export { ContentForm } from './components/ContentForm';
+export { ContentFormSkeleton } from './components/ContentFormSkeleton';
 export { ContentListSection } from './components/ContentListSection';
 export { NewPostModal } from './components/NewPostModal';
 export { useContentForm } from './hooks/useContentForm';

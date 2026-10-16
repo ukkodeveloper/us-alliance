@@ -1,11 +1,15 @@
 import { useQueryErrorResetBoundary } from '@tanstack/react-query';
 import { Suspense } from 'react';
 
+import { CONTENT_PAGE_SIZE } from '../../../api/contents';
 import { Button } from '../../../components/Button';
 import { ErrorBoundary } from '../../../components/ErrorBoundary';
+import { TableSkeleton } from '../../../components/TableSkeleton';
 import { useContentListParams } from '../hooks/useContentListParams';
 import { ContentFilters } from './ContentFilters';
 import { ContentTable } from './ContentTable';
+
+const CONTENT_COLUMN_WIDTHS = ['w-20', '', 'w-24', 'w-20'];
 
 export function ContentListSection() {
   const { params, setPage, setCategory, setPublishStatus } = useContentListParams();
@@ -40,7 +44,13 @@ export function ContentListSection() {
           )}
         >
           <Suspense
-            fallback={<p className="py-20 text-center text-sm text-gray-500">콘텐츠 목록을 불러오는 중입니다.</p>}
+            fallback={
+              <TableSkeleton
+                label="콘텐츠 목록을 불러오는 중입니다."
+                columnWidths={CONTENT_COLUMN_WIDTHS}
+                rowCount={CONTENT_PAGE_SIZE}
+              />
+            }
           >
             <ContentTable
               page={params.page}

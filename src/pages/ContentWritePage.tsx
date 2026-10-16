@@ -10,6 +10,7 @@ import { EditorLayout } from '../components/layout/EditorLayout';
 import {
   clearDraft,
   ContentForm,
+  ContentFormSkeleton,
   type ContentFormValues,
   EMPTY_CONTENT_FORM_VALUES,
   loadDraft,
@@ -105,7 +106,7 @@ function EditContentWriter({ contentId }: { contentId: number }) {
       <Suspense
         fallback={
           <ContentWriterLayout actions={null}>
-            <p className="py-20 text-center text-sm text-gray-500">콘텐츠를 불러오는 중입니다.</p>
+            <ContentFormSkeleton />
           </ContentWriterLayout>
         }
       >

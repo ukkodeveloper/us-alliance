@@ -1,10 +1,14 @@
 import { useQueryErrorResetBoundary } from '@tanstack/react-query';
 import { Suspense } from 'react';
 
+import { NOTIFICATION_PAGE_SIZE } from '../../../api/notifications';
 import { Button } from '../../../components/Button';
 import { ErrorBoundary } from '../../../components/ErrorBoundary';
+import { TableSkeleton } from '../../../components/TableSkeleton';
 import { useNotificationListParams } from '../hooks/useNotificationListParams';
 import { NotificationTable } from './NotificationTable';
+
+const NOTIFICATION_COLUMN_WIDTHS = ['w-16', '', 'w-16', 'w-16', 'w-20', 'w-16'];
 
 export function NotificationListSection() {
   const { page, setPage } = useNotificationListParams();
@@ -31,7 +35,15 @@ export function NotificationListSection() {
           </div>
         )}
       >
-        <Suspense fallback={<p className="py-20 text-center text-sm text-gray-500">알람 목록을 불러오는 중입니다.</p>}>
+        <Suspense
+          fallback={
+            <TableSkeleton
+              label="알람 목록을 불러오는 중입니다."
+              columnWidths={NOTIFICATION_COLUMN_WIDTHS}
+              rowCount={NOTIFICATION_PAGE_SIZE}
+            />
+          }
+        >
           <NotificationTable page={page} onPageChange={setPage} />
         </Suspense>
       </ErrorBoundary>
