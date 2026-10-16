@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient, useQueryErrorResetBoundary } from '@tanstack/react-query';
-import { type FormEvent, Suspense } from 'react';
+import { type FormEvent, Suspense, useState } from 'react';
 
 import { contentQueries } from '../../../api/contents';
 import { MAX_NOTIFICATION_TITLE_LENGTH, TARGET_TYPE_LABELS, TARGET_TYPES } from '../../../api/notifications';
@@ -10,7 +10,7 @@ import { ErrorBoundary } from '../../../components/ErrorBoundary';
 import { Modal } from '../../../components/Modal';
 import { RadioGroup } from '../../../components/RadioGroup';
 import { TextField } from '../../../components/TextField';
-import { createPublishPlan, isNotificationLocked } from './publishPlan';
+import { createPublishPlan, isAlreadyPublic, isNotificationLocked } from './publishPlan';
 import { runPublishPlan } from './runPublishPlan';
 import { type PublishStep, type PublishVisibility } from './types';
 import { usePublishOptions } from './usePublishOptions';
@@ -95,6 +95,7 @@ type PublishFormProps = Omit<PublishModalProps, 'open'> & { publish: PublishMuta
 
 function PublishForm({ contentId, contentTitle, onClose, onPublished, publish }: PublishFormProps) {
   const serverState = usePublishState(contentId);
+  const [wasPublicWhenOpened] = useState(() => isAlreadyPublic(serverState));
   const { values, options, errors, canSchedule, setValues, validate } = usePublishOptions(serverState);
   const { mutate, isPending, error } = publish;
 
@@ -113,7 +114,7 @@ function PublishForm({ contentId, contentTitle, onClose, onPublished, publish }:
     if (!validate()) {
       return;
     }
-    const steps = createPublishPlan(serverState, options);
+    const steps = createPublishPlan(serverState, options, { wasPublicWhenOpened });
     if (steps.length === 0) {
       onPublished();
       return;

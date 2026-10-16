@@ -23,14 +23,26 @@ export function toInitialVisibility(state: PublishServerState): PublishVisibilit
   return state.isScheduled ? 'scheduled' : 'private';
 }
 
-export function createPublishPlan(state: PublishServerState, options: PublishOptions): PublishStep[] {
+type PublishPlanContext = {
+  wasPublicWhenOpened: boolean;
+};
+
+export function createPublishPlan(
+  state: PublishServerState,
+  options: PublishOptions,
+  { wasPublicWhenOpened }: PublishPlanContext
+): PublishStep[] {
   const { visibility, scheduledAt, notification } = options;
 
   switch (visibility) {
     case 'public':
       return [
         ...planPublicContent(state),
-        ...planNotification(state.notification, notification, keptNotificationSendAt(state)),
+        ...planNotification(
+          state.notification,
+          notification,
+          wasPublicWhenOpened ? keptNotificationSendAt(state) : null
+        ),
       ];
     case 'private':
       return [...planPrivateContent(state), ...planNotification(state.notification, { send: false }, null)];
@@ -51,12 +63,12 @@ export function createPublishPlan(state: PublishServerState, options: PublishOpt
   }
 }
 
-function isAlreadyPublic(state: PublishServerState) {
+export function isAlreadyPublic(state: PublishServerState) {
   return state.status === 'public' && !state.isScheduled;
 }
 
 function keptNotificationSendAt(state: PublishServerState) {
-  return isAlreadyPublic(state) ? (state.notification?.scheduled_at ?? null) : null;
+  return state.notification?.scheduled_at ?? null;
 }
 
 function planPublicContent(state: PublishServerState): PublishStep[] {
