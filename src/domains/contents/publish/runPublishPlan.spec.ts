@@ -94,7 +94,7 @@ describe('runPublishPlan', () => {
     expect(updateNotificationSchedule).toHaveBeenCalledWith(NOTIFICATION_ID, { scheduled_at: SCHEDULED_AT_KST });
   });
 
-  it('중간 단계가 실패하면 이후 단계를 요청하지 않고 완료한 단계 수와 에러를 반환한다', async () => {
+  it('중간 단계가 실패하면 이후 단계를 요청하지 않고 실패한 에러를 반환한다', async () => {
     const conflict = new ApiError(409, '이미 알람이 있습니다.');
     vi.mocked(createNotification).mockRejectedValue(conflict);
 

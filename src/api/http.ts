@@ -10,7 +10,7 @@ export class ApiError extends Error {
   }
 }
 
-export type RequestOptions = Omit<RequestInit, 'body'> & {
+type RequestOptions = Omit<RequestInit, 'body'> & {
   auth?: boolean;
   json?: unknown;
 };
