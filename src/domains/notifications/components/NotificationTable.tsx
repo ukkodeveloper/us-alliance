@@ -10,7 +10,6 @@ import {
 import { Pagination } from '../../../components/Pagination';
 import { StatusBadge, type StatusTone } from '../../../components/StatusBadge';
 import { formatDateTime } from '../../../utils/date';
-import { useNotificationListParams } from '../hooks/useNotificationListParams';
 
 const SEND_STATUS_TONES: Record<SendStatus, StatusTone> = {
   pending: 'warning',
@@ -20,8 +19,12 @@ const SEND_STATUS_TONES: Record<SendStatus, StatusTone> = {
 
 const EMPTY_CELL = '-';
 
-export function NotificationTable() {
-  const { page, setPage } = useNotificationListParams();
+type NotificationTableProps = {
+  page: number;
+  onPageChange: (page: number) => void;
+};
+
+export function NotificationTable({ page, onPageChange }: NotificationTableProps) {
   const { data } = useSuspenseQuery(notificationQueries.list({ page, limit: NOTIFICATION_PAGE_SIZE }));
   const totalPages = Math.ceil(data.total / NOTIFICATION_PAGE_SIZE);
 
@@ -62,7 +65,7 @@ export function NotificationTable() {
           </tbody>
         </table>
       </div>
-      <Pagination page={page} totalPages={totalPages} onChange={setPage} />
+      <Pagination page={page} totalPages={totalPages} onChange={onPageChange} />
     </div>
   );
 }

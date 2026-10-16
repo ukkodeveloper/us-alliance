@@ -3,15 +3,18 @@ import { Suspense } from 'react';
 
 import { Button } from '../../../components/Button';
 import { ErrorBoundary } from '../../../components/ErrorBoundary';
+import { useNotificationListParams } from '../hooks/useNotificationListParams';
 import { NotificationTable } from './NotificationTable';
 
 export function NotificationListSection() {
+  const { page, setPage } = useNotificationListParams();
   const { reset: resetQueryErrors } = useQueryErrorResetBoundary();
 
   return (
     <section className="flex flex-col gap-10">
       <h1 className="text-3xl font-bold text-gray-900">알람</h1>
       <ErrorBoundary
+        key={page}
         fallback={({ reset }) => (
           <div role="alert" className="flex flex-col items-center gap-3 py-20 text-sm text-gray-500">
             <p>알람 목록을 불러오지 못했습니다.</p>
@@ -29,7 +32,7 @@ export function NotificationListSection() {
         )}
       >
         <Suspense fallback={<p className="py-20 text-center text-sm text-gray-500">알람 목록을 불러오는 중입니다.</p>}>
-          <NotificationTable />
+          <NotificationTable page={page} onPageChange={setPage} />
         </Suspense>
       </ErrorBoundary>
     </section>
