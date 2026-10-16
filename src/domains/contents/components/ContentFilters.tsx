@@ -1,3 +1,5 @@
+import { type ChangeEvent, type ReactNode } from 'react';
+
 import {
   CATEGORIES,
   type Category,
@@ -6,8 +8,6 @@ import {
   PUBLISH_STATUSES,
   type PublishStatus,
 } from '../../../api/contents';
-
-const SELECT_CLASS_NAME = 'h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700';
 
 type ContentFiltersProps = {
   category?: Category;
@@ -24,36 +24,59 @@ export function ContentFilters({
 }: ContentFiltersProps) {
   return (
     <div className="flex flex-wrap justify-end gap-2">
-      <label>
-        <span className="sr-only">카테고리</span>
-        <select
-          value={category ?? ''}
-          onChange={event => onCategoryChange(CATEGORIES.find(option => option === event.target.value))}
-          className={SELECT_CLASS_NAME}
-        >
-          <option value="">전체 카테고리</option>
-          {CATEGORIES.map(option => (
-            <option key={option} value={option}>
-              {CATEGORY_LABELS[option]}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        <span className="sr-only">상태</span>
-        <select
-          value={publishStatus ?? ''}
-          onChange={event => onPublishStatusChange(PUBLISH_STATUSES.find(option => option === event.target.value))}
-          className={SELECT_CLASS_NAME}
-        >
-          <option value="">전체 상태</option>
-          {PUBLISH_STATUSES.map(option => (
-            <option key={option} value={option}>
-              {PUBLISH_STATUS_LABELS[option]}
-            </option>
-          ))}
-        </select>
-      </label>
+      <FilterSelect
+        label="카테고리"
+        value={category ?? ''}
+        onChange={event => onCategoryChange(CATEGORIES.find(option => option === event.target.value))}
+      >
+        <option value="">전체 카테고리</option>
+        {CATEGORIES.map(option => (
+          <option key={option} value={option}>
+            {CATEGORY_LABELS[option]}
+          </option>
+        ))}
+      </FilterSelect>
+      <FilterSelect
+        label="상태"
+        value={publishStatus ?? ''}
+        onChange={event => onPublishStatusChange(PUBLISH_STATUSES.find(option => option === event.target.value))}
+      >
+        <option value="">전체 상태</option>
+        {PUBLISH_STATUSES.map(option => (
+          <option key={option} value={option}>
+            {PUBLISH_STATUS_LABELS[option]}
+          </option>
+        ))}
+      </FilterSelect>
     </div>
+  );
+}
+
+type FilterSelectProps = {
+  label: string;
+  value: string;
+  onChange: (event: ChangeEvent<HTMLSelectElement>) => void;
+  children: ReactNode;
+};
+
+function FilterSelect({ label, value, onChange, children }: FilterSelectProps) {
+  return (
+    <label className="relative">
+      <span className="sr-only">{label}</span>
+      <select
+        value={value}
+        onChange={onChange}
+        className="h-9 appearance-none rounded-lg border border-gray-200 bg-white pr-9 pl-3 text-sm text-gray-700"
+      >
+        {children}
+      </select>
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 16 16"
+        className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-gray-500"
+      >
+        <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    </label>
   );
 }
