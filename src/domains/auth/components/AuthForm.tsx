@@ -3,6 +3,7 @@ import { type FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { type Credentials, type LoginResponse } from '../../../api/auth';
+import { type ErrorMessageByStatus, getErrorMessage } from '../../../api/http';
 import { setTokens } from '../../../api/tokenStorage';
 import { Button } from '../../../components/Button';
 import { TextField } from '../../../components/TextField';
@@ -11,11 +12,12 @@ import { validateAuth } from '../utils/validateAuth';
 type AuthFormProps = {
   submitLabel: string;
   authenticate: (credentials: Credentials) => Promise<LoginResponse>;
+  errorMessages: ErrorMessageByStatus;
 };
 
 const INITIAL_VALUES: Credentials = { email: '', password: '' };
 
-export function AuthForm({ submitLabel, authenticate }: AuthFormProps) {
+export function AuthForm({ submitLabel, authenticate, errorMessages }: AuthFormProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [values, setValues] = useState(INITIAL_VALUES);
@@ -70,7 +72,7 @@ export function AuthForm({ submitLabel, authenticate }: AuthFormProps) {
       </Button>
       {error != null && (
         <p role="alert" className="mt-3 text-center text-sm text-danger">
-          {error.message}
+          {getErrorMessage(error, errorMessages)}
         </p>
       )}
     </form>

@@ -35,7 +35,7 @@ const UNAUTHORIZED_STATUS = 401;
 const NETWORK_ERROR_MESSAGE = '네트워크 연결을 확인해주세요.';
 const SESSION_EXPIRED_MESSAGE = '로그인이 만료되었습니다. 다시 로그인해주세요.';
 const FALLBACK_ERROR_MESSAGE = '요청을 처리하지 못했습니다. 잠시 후 다시 시도해주세요.';
-const ERROR_MESSAGE_BY_STATUS: Partial<Record<number, string>> = {
+const ERROR_MESSAGE_BY_STATUS: ErrorMessageByStatus = {
   400: '요청 내용을 확인해주세요.',
   401: '로그인이 필요합니다.',
   403: '권한이 없습니다.',
@@ -102,7 +102,7 @@ async function parseResponse<TData>(response: Response): Promise<TData> {
     return body.data as TData;
   }
 
-  throw new ApiError(response.status, body?.error ?? getDefaultErrorMessage(response.status));
+  throw new ApiError(response.status, getDefaultErrorMessage(response.status));
 }
 
 async function readBody<TData>(response: Response): Promise<ApiResponse<TData> | null> {
@@ -115,6 +115,15 @@ async function readBody<TData>(response: Response): Promise<ApiResponse<TData> |
 
 function getDefaultErrorMessage(status: number): string {
   return ERROR_MESSAGE_BY_STATUS[status] ?? FALLBACK_ERROR_MESSAGE;
+}
+
+export type ErrorMessageByStatus = Partial<Record<number, string>>;
+
+export function getErrorMessage(error: Error, messageByStatus: ErrorMessageByStatus = {}) {
+  if (error instanceof ApiError) {
+    return messageByStatus[error.status] ?? error.message;
+  }
+  return FALLBACK_ERROR_MESSAGE;
 }
 
 function refreshAccessToken(): Promise<boolean> {

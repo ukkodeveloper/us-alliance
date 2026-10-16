@@ -2,7 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 
-import { createNotification } from '../api/notifications';
+import { getErrorMessage } from '../api/http';
+import { CREATE_NOTIFICATION_ERROR_MESSAGES, createNotification } from '../api/notifications';
 import { Button } from '../components/Button';
 import { EditorLayout } from '../components/layout/EditorLayout';
 import { LeaveConfirmModal, NotificationForm, useNotificationForm } from '../domains/notifications';
@@ -70,7 +71,7 @@ function NotificationWriter({ contentId }: { contentId: number }) {
       <NotificationForm values={values} errors={errors} onChange={setValues} />
       {error != null && (
         <p role="alert" className="mt-6 text-sm text-danger">
-          {error.message}
+          {getErrorMessage(error, CREATE_NOTIFICATION_ERROR_MESSAGES)}
         </p>
       )}
       <LeaveConfirmModal

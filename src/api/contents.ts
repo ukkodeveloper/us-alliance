@@ -1,6 +1,6 @@
 import { queryOptions } from '@tanstack/react-query';
 
-import { request } from './http';
+import { type ErrorMessageByStatus, request } from './http';
 import type { Notification, SendStatus } from './notifications';
 
 export const CONTENT_PAGE_SIZE = 10;
@@ -36,6 +36,11 @@ export const CATEGORY_LABELS: Record<Category, string> = {
 };
 
 export type ContentStatus = 'public' | 'private';
+
+export const CONTENT_ERROR_MESSAGES: ErrorMessageByStatus = {
+  403: '이 콘텐츠에 대한 권한이 없습니다.',
+  404: '콘텐츠를 찾을 수 없습니다.',
+};
 
 export const PUBLISH_STATUSES = ['published', 'scheduled', 'draft'] as const;
 

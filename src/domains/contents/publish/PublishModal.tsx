@@ -1,8 +1,14 @@
 import { useMutation, useQueryClient, useQueryErrorResetBoundary } from '@tanstack/react-query';
 import { type FormEvent, Suspense, useState } from 'react';
 
-import { contentQueries } from '../../../api/contents';
-import { MAX_NOTIFICATION_TITLE_LENGTH, TARGET_TYPE_LABELS, TARGET_TYPES } from '../../../api/notifications';
+import { CONTENT_ERROR_MESSAGES, contentQueries } from '../../../api/contents';
+import { getErrorMessage } from '../../../api/http';
+import {
+  CREATE_NOTIFICATION_ERROR_MESSAGES,
+  MAX_NOTIFICATION_TITLE_LENGTH,
+  TARGET_TYPE_LABELS,
+  TARGET_TYPES,
+} from '../../../api/notifications';
 import { Button } from '../../../components/Button';
 import { Checkbox } from '../../../components/Checkbox';
 import { DateTimeField } from '../../../components/DateTimeField';
@@ -203,7 +209,7 @@ function PublishForm({ contentId, contentTitle, onClose, onPublished, publish }:
       )}
       {error != null && (
         <p role="alert" className="text-sm text-danger">
-          {error.message}
+          {getErrorMessage(error, { ...CONTENT_ERROR_MESSAGES, ...CREATE_NOTIFICATION_ERROR_MESSAGES })}
         </p>
       )}
       <div className="-mx-6 flex justify-end gap-2 border-t border-gray-100 px-6 pt-5">

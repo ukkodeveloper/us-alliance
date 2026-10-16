@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ApiError, request, setUnauthorizedHandler } from './http';
+import { ApiError, getErrorMessage, request, setUnauthorizedHandler } from './http';
 import { getTokens, setTokens } from './tokenStorage';
 
 const OLD_TOKENS = { accessToken: 'old-access', refreshToken: 'refresh' };
@@ -84,12 +84,12 @@ describe('request', () => {
     expect(new Headers(init?.headers).get('Content-Type')).toBe('application/json');
   });
 
-  it('서버가 실패를 응답하면 서버의 error 문구와 상태 코드로 ApiError를 던진다', async () => {
-    mockFetch(() => jsonResponse(409, { success: false, error: '이미 등록된 이메일입니다.' }));
+  it('서버가 실패를 응답하면 서버의 영문 error 문구 대신 상태 코드에 맞는 한국어 문구로 ApiError를 던진다', async () => {
+    mockFetch(() => jsonResponse(409, { success: false, error: 'email already exists' }));
 
     await expect(request('/api/v1/auth/register', { auth: false })).rejects.toMatchObject({
       status: 409,
-      message: '이미 등록된 이메일입니다.',
+      message: '이미 존재하거나 현재 상태와 충돌하는 요청입니다.',
     });
   });
 
@@ -183,13 +183,13 @@ describe('request', () => {
     expect(onUnauthorized).toHaveBeenCalledTimes(1);
   });
 
-  it('인증이 필요 없는 요청은 401이어도 재발급하지 않고 서버 문구로 실패한다', async () => {
+  it('인증이 필요 없는 요청은 401이어도 재발급하지 않고 401 ApiError로 실패한다', async () => {
     setTokens(OLD_TOKENS);
-    const fetchMock = mockFetch(() => jsonResponse(401, { success: false, error: '비밀번호가 올바르지 않습니다.' }));
+    const fetchMock = mockFetch(() => jsonResponse(401, { success: false, error: 'invalid email or password' }));
 
     await expect(request('/api/v1/auth/login', { method: 'POST', auth: false })).rejects.toMatchObject({
       status: 401,
-      message: '비밀번호가 올바르지 않습니다.',
+      message: '로그인이 필요합니다.',
     });
 
     expect(callsTo(fetchMock, REFRESH_URL)).toHaveLength(0);
@@ -205,5 +205,21 @@ describe('request', () => {
 
     expect(callsTo(fetchMock, REFRESH_URL)).toHaveLength(0);
     expect(onUnauthorized).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('getErrorMessage', () => {
+  it('화면에서 정한 상태 코드별 문구가 있으면 그 문구를, 없으면 기본 문구를 돌려준다', () => {
+    const unauthorized = new ApiError(401, '로그인이 필요합니다.');
+    const loginMessages = { 401: '이메일 또는 비밀번호가 올바르지 않습니다.' };
+
+    expect(getErrorMessage(unauthorized, loginMessages)).toBe('이메일 또는 비밀번호가 올바르지 않습니다.');
+    expect(getErrorMessage(unauthorized)).toBe('로그인이 필요합니다.');
+  });
+
+  it('ApiError가 아닌 에러는 내부 문구를 노출하지 않고 기본 문구를 돌려준다', () => {
+    expect(getErrorMessage(new TypeError('x is undefined'))).toBe(
+      '요청을 처리하지 못했습니다. 잠시 후 다시 시도해주세요.'
+    );
   });
 });

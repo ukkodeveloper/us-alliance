@@ -3,7 +3,8 @@ import { format } from 'date-fns';
 import { type ReactNode, Suspense, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 
-import { type Content, contentQueries, createContent, updateContent } from '../api/contents';
+import { type Content, CONTENT_ERROR_MESSAGES, contentQueries, createContent, updateContent } from '../api/contents';
+import { getErrorMessage } from '../api/http';
 import { Button } from '../components/Button';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { EditorLayout } from '../components/layout/EditorLayout';
@@ -84,7 +85,7 @@ function NewContentWriter() {
           </Button>
         </>
       }
-      error={save.error?.message}
+      error={save.error == null ? undefined : getErrorMessage(save.error, CONTENT_ERROR_MESSAGES)}
     >
       <ContentForm values={form.values} errors={form.errors} onChange={form.setValues} />
       {publishTarget != null && (
@@ -102,7 +103,7 @@ function NewContentWriter() {
 
 function EditContentWriter({ contentId }: { contentId: number }) {
   return (
-    <ErrorBoundary fallback={({ error }) => <ContentNotice message={error.message} />}>
+    <ErrorBoundary fallback={({ error }) => <ContentNotice message={getErrorMessage(error, CONTENT_ERROR_MESSAGES)} />}>
       <Suspense
         fallback={
           <ContentWriterLayout actions={null}>
@@ -136,7 +137,7 @@ function EditContentForm({ contentId }: { contentId: number }) {
           발행하기
         </Button>
       }
-      error={save.error?.message}
+      error={save.error == null ? undefined : getErrorMessage(save.error, CONTENT_ERROR_MESSAGES)}
     >
       <ContentForm values={form.values} errors={form.errors} onChange={form.setValues} />
       {publishTarget != null && (

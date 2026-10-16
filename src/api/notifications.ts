@@ -1,6 +1,6 @@
 import { queryOptions } from '@tanstack/react-query';
 
-import { request } from './http';
+import { type ErrorMessageByStatus, request } from './http';
 
 export const NOTIFICATION_PAGE_SIZE = 10;
 
@@ -9,6 +9,11 @@ export const TARGET_TYPES = ['all', 'follower', 'member'] as const;
 export type TargetType = (typeof TARGET_TYPES)[number];
 
 export const MAX_NOTIFICATION_TITLE_LENGTH = 50;
+
+export const CREATE_NOTIFICATION_ERROR_MESSAGES: ErrorMessageByStatus = {
+  404: '콘텐츠를 찾을 수 없습니다.',
+  409: '이미 알람이 등록된 콘텐츠입니다.',
+};
 
 export type SendStatus = 'pending' | 'sent' | 'failed';
 
