@@ -4,6 +4,8 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { type Content, contentQueries, type ContentSchedule } from '../../../api/contents';
+import { type Notification } from '../../../api/notifications';
+import { formatDateTime } from '../../../utils/date';
 import { PublishModal } from './PublishModal';
 import { runPublishPlan } from './runPublishPlan';
 
@@ -26,11 +28,15 @@ const PRIVATE_CONTENT: Content = {
 
 const NOT_SCHEDULED: ContentSchedule = { content_id: CONTENT_ID, is_scheduled: false, published_at: null };
 
-function renderPublishModal(content: Content = PRIVATE_CONTENT) {
+function renderPublishModal(
+  content: Content = PRIVATE_CONTENT,
+  schedule: ContentSchedule = NOT_SCHEDULED,
+  notification: Notification | null = null
+) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity } } });
   queryClient.setQueryData(contentQueries.detail(CONTENT_ID).queryKey, content);
-  queryClient.setQueryData(contentQueries.schedule(CONTENT_ID).queryKey, NOT_SCHEDULED);
-  queryClient.setQueryData(contentQueries.notification(CONTENT_ID).queryKey, null);
+  queryClient.setQueryData(contentQueries.schedule(CONTENT_ID).queryKey, schedule);
+  queryClient.setQueryData(contentQueries.notification(CONTENT_ID).queryKey, notification);
   const onClose = vi.fn();
   const onPublished = vi.fn();
 
@@ -119,5 +125,29 @@ describe('PublishModal', () => {
 
     expect(screen.getByRole('button', { name: '취소' })).toBeDisabled();
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('예약 알람이 있는 예약 콘텐츠를 공개 + 발송으로 바꾸면 예약 알람이 취소되고 지금 발송된다고 알려준다', async () => {
+    const scheduledAt = '2026-10-20T10:00:00+09:00';
+    const { user } = renderPublishModal(
+      { ...PRIVATE_CONTENT, publish_status: 'scheduled' },
+      { content_id: CONTENT_ID, is_scheduled: true, published_at: scheduledAt },
+      {
+        id: 31,
+        content_id: CONTENT_ID,
+        title: '새 글 알림',
+        target_type: 'all',
+        send_status: 'pending',
+        scheduled_at: scheduledAt,
+        created_at: '2026-10-15T09:00:00+09:00',
+        updated_at: '2026-10-15T09:00:00+09:00',
+      }
+    );
+    const notice = `${formatDateTime(scheduledAt)}에 예약된 알람은 취소되고 지금 바로 발송됩니다.`;
+    expect(screen.queryByText(notice)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('radio', { name: '공개' }));
+
+    expect(screen.getByText(notice)).toBeInTheDocument();
   });
 });

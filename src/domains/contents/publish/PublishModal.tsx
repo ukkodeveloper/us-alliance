@@ -10,6 +10,7 @@ import { ErrorBoundary } from '../../../components/ErrorBoundary';
 import { Modal } from '../../../components/Modal';
 import { RadioGroup } from '../../../components/RadioGroup';
 import { TextField } from '../../../components/TextField';
+import { formatDateTime } from '../../../utils/date';
 import { createPublishPlan, isAlreadyPublic, isNotificationLocked } from './publishPlan';
 import { runPublishPlan } from './runPublishPlan';
 import { type PublishStep, type PublishVisibility } from './types';
@@ -102,6 +103,9 @@ function PublishForm({ contentId, contentTitle, onClose, onPublished, publish }:
   const isPrivate = values.visibility === 'private';
   const isLocked = isNotificationLocked(serverState.notification);
   const shouldSendNotification = !isPrivate && values.sendNotification;
+  const pendingNotification = isLocked ? null : serverState.notification;
+  const replacesPendingNotification =
+    pendingNotification != null && values.visibility === 'public' && shouldSendNotification && !wasPublicWhenOpened;
 
   const visibilityOptions: Array<{ value: PublishVisibility; label: string; disabled?: boolean }> = [
     { value: 'public', label: '공개' },
@@ -151,6 +155,11 @@ function PublishForm({ contentId, contentTitle, onClose, onPublished, publish }:
         <h3 className="text-sm font-semibold text-gray-900">알람 설정</h3>
         <p className="text-xs text-gray-400">비공개 상태로 발행시 알람 설정은 자동으로 미발송으로 처리됩니다.</p>
         {isLocked && <p className="text-xs text-gray-400">이미 발송된 알람은 변경할 수 없습니다.</p>}
+        {replacesPendingNotification && (
+          <p className="text-xs text-danger">
+            {formatDateTime(pendingNotification.scheduled_at)}에 예약된 알람은 취소되고 지금 바로 발송됩니다.
+          </p>
+        )}
       </div>
       <RadioGroup
         name="sendNotification"
